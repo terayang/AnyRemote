@@ -40,7 +40,7 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
 
 - 修改本文件所述约定、目录结构、命令时，必须同步更新本文件。
 - 常用命令（脚手架建立后填写并保持最新）：
-  - 安装：_TBD_
-  - 开发：_TBD_
-  - 测试：_TBD_
-  - 打包：_TBD_
+  - 安装：`npm install`
+  - 开发：`npm run dev`（electron-vite dev，HMR）
+  - 测试：`npm test`（vitest 单测）；类型检查 `npm run typecheck`
+  - 打包：`npm run build`（electron-vite build → `out/`；安装包 electron-builder 后续阶段接入）

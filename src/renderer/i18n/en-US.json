@@ -1,0 +1,19 @@
+{
+  "app": {
+    "title": "AnyRemote",
+    "tagline": "Enter a target address to auto-detect available remote protocols",
+    "targetPlaceholder": "Enter target IP or hostname"
+  },
+  "protocols": {
+    "desc": {
+      "ssh": "Secure Shell: run commands and transfer files (SFTP) remotely",
+      "vnc": "Remote desktop: view and control the target machine's GUI",
+      "rdp": "Windows Remote Desktop Protocol (not supported yet, planned)",
+      "telnet": "Legacy plaintext remote terminal (not supported yet, planned)",
+      "ftp": "Legacy plaintext file transfer (not supported yet, planned)",
+      "smb": "Windows file sharing protocol (not supported yet, planned)",
+      "http": "Web service (detection only)",
+      "https": "Encrypted web service (detection only)"
+    }
+  }
+}
