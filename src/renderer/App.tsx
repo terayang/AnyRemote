@@ -1,50 +1,42 @@
-import { ConfigProvider, Input, Space, Tag, theme, Typography } from 'antd'
-import { useTranslation } from 'react-i18next'
+import { ConfigProvider, theme } from 'antd'
+import { useEffect } from 'react'
+import ScanPage from './pages/ScanPage'
+import SessionPage from './pages/SessionPage'
 import { useAppStore } from './store'
 
-const { Title, Text } = Typography
-
 export default function App() {
-  const { t } = useTranslation()
-  const targetAddress = useAppStore((s) => s.targetAddress)
-  const setTargetAddress = useAppStore((s) => s.setTargetAddress)
-  const versions = window.anyremote?.versions
+  const page = useAppStore((s) => s.page)
+
+  // Keyboard-first shortcuts (see docs/ARCHITECTURE.md §8).
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return
+      const key = e.key.toLowerCase()
+      if (key === 'k') {
+        e.preventDefault()
+        document.getElementById('target-address-input')?.focus()
+      } else if (key === 'w') {
+        e.preventDefault()
+        const { activeTab, closeTab } = useAppStore.getState()
+        if (activeTab) closeTab(activeTab)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   return (
     <ConfigProvider
       theme={{
-        algorithm: [theme.darkAlgorithm, theme.compactAlgorithm]
+        algorithm: [theme.darkAlgorithm, theme.compactAlgorithm],
+        token: {
+          colorPrimary: '#4c8dff',
+          colorInfo: '#4c8dff',
+          borderRadius: 6
+        }
       }}
     >
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#141414'
-        }}
-      >
-        <Space direction="vertical" align="center" size="middle">
-          <Title level={1} style={{ margin: 0 }}>
-            {t('app.title')}
-          </Title>
-          <Text type="secondary">{t('app.tagline')}</Text>
-          <Input
-            style={{ width: 320 }}
-            placeholder={t('app.targetPlaceholder')}
-            value={targetAddress}
-            onChange={(e) => setTargetAddress(e.target.value)}
-          />
-          {versions && (
-            <Space size="small" wrap>
-              <Tag>Electron {versions.electron}</Tag>
-              <Tag>Node {versions.node}</Tag>
-              <Tag>Chromium {versions.chrome}</Tag>
-            </Space>
-          )}
-        </Space>
-      </div>
+      {page === 'scan' ? <ScanPage /> : <SessionPage />}
     </ConfigProvider>
   )
 }

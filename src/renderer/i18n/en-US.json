@@ -4,6 +4,44 @@
     "tagline": "Enter a target address to auto-detect available remote protocols",
     "targetPlaceholder": "Enter target IP or hostname"
   },
+  "scan": {
+    "start": "Start Scan",
+    "scanning": "Detecting protocols…",
+    "detected": "Detected",
+    "closed": "Closed",
+    "supported": "Supported",
+    "unsupported": "Not yet",
+    "unsupportedTooltip": "Not supported yet, planned",
+    "selectedCount": "{{count}} selected",
+    "connect": "Connect",
+    "shortcutHint": "⌘K to focus input"
+  },
+  "session": {
+    "saved": "Saved Connections",
+    "current": "Current",
+    "tabs": {
+      "desktop": "Remote Desktop",
+      "terminal": "Terminal",
+      "files": "Files"
+    }
+  },
+  "desktop": {
+    "placeholder": "Remote desktop placeholder · {{resolution}}",
+    "zoomFit": "Fit to window",
+    "zoomActual": "Actual size",
+    "disconnect": "Disconnect"
+  },
+  "files": {
+    "local": "Local",
+    "remote": "Remote",
+    "upload": "Upload",
+    "download": "Download",
+    "newFolder": "New Folder",
+    "delete": "Delete",
+    "name": "Name",
+    "size": "Size",
+    "modified": "Modified"
+  },
   "protocols": {
     "desc": {
       "ssh": "Secure Shell: run commands and transfer files (SFTP) remotely",

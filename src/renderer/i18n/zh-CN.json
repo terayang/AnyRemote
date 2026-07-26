@@ -4,6 +4,44 @@
     "tagline": "输入目标地址，自动探测可用的远程协议",
     "targetPlaceholder": "输入目标 IP 或主机名"
   },
+  "scan": {
+    "start": "开始扫描",
+    "scanning": "正在探测协议…",
+    "detected": "已检测到",
+    "closed": "未开放",
+    "supported": "支持",
+    "unsupported": "暂不支持",
+    "unsupportedTooltip": "暂不支持，规划中",
+    "selectedCount": "已选 {{count}} 项",
+    "connect": "连接",
+    "shortcutHint": "⌘K 聚焦输入框"
+  },
+  "session": {
+    "saved": "已保存连接",
+    "current": "当前",
+    "tabs": {
+      "desktop": "远程桌面",
+      "terminal": "终端",
+      "files": "文件管理"
+    }
+  },
+  "desktop": {
+    "placeholder": "远程桌面占位 · {{resolution}}",
+    "zoomFit": "适应窗口",
+    "zoomActual": "原始尺寸",
+    "disconnect": "断开"
+  },
+  "files": {
+    "local": "本地",
+    "remote": "远程",
+    "upload": "上传",
+    "download": "下载",
+    "newFolder": "新建文件夹",
+    "delete": "删除",
+    "name": "名称",
+    "size": "大小",
+    "modified": "修改时间"
+  },
   "protocols": {
     "desc": {
       "ssh": "安全 Shell：远程执行命令、传输文件（SFTP）",
