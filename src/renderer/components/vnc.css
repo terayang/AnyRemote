@@ -1,0 +1,28 @@
+/* Real VNC desktop panel (stage 5b): noVNC canvas host + status overlays. */
+
+/* Overrides .desktop-viewport's flex centering from global.css: the noVNC
+   screen div must stretch to fill the viewport (it scrolls internally when
+   the framebuffer exceeds the panel in 原始尺寸 mode). */
+.desktop-viewport.vnc-viewport {
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+
+/* noVNC appends its screen div here; it sizes itself to 100%x100%. */
+.vnc-container {
+  position: absolute;
+  inset: 0;
+}
+
+.vnc-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(10, 10, 10, 0.86);
+}

@@ -6,6 +6,7 @@ import DesktopPanel from '../components/DesktopPanel'
 import FileManagerPanel from '../components/FileManagerPanel'
 import TerminalPanel from '../components/TerminalPanel'
 import { useAppStore, type TabKind } from '../store'
+import { useSessionStore } from '../store/session'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
@@ -29,6 +30,12 @@ export default function SessionPage() {
   const activeTab = useAppStore((s) => s.activeTab)
   const setActiveTab = useAppStore((s) => s.setActiveTab)
   const closeTab = useAppStore((s) => s.closeTab)
+  const context = useSessionStore((s) => s.context)
+  const target = context?.target ?? targetAddress
+  const protocolTag =
+    context && context.protocols.length > 0
+      ? context.protocols.join('+').toUpperCase()
+      : null
 
   return (
     <Layout style={{ height: '100vh' }}>
@@ -44,12 +51,14 @@ export default function SessionPage() {
           <div className="saved-item saved-item-active">
             <Space size={6}>
               <Text style={{ fontSize: 13 }}>{t('session.current')}</Text>
-              <Tag color="blue" style={{ marginInlineEnd: 0 }}>
-                SSH+VNC
-              </Tag>
+              {protocolTag && (
+                <Tag color="blue" style={{ marginInlineEnd: 0 }}>
+                  {protocolTag}
+                </Tag>
+              )}
             </Space>
             <Text className="mono" type="secondary" style={{ fontSize: 12 }}>
-              {targetAddress}
+              {target}
             </Text>
           </div>
           {SAVED_CONNECTIONS.map((c) => (

@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import type { ProtocolId } from '../../shared/protocols'
+import type { TargetScanReport } from '../../shared/scan'
+import { useSessionStore, type SessionCredentials } from './session'
 
 export type Page = 'scan' | 'session'
 
@@ -11,30 +13,34 @@ export interface SessionTab {
   titleKey: string
 }
 
-/** Mock scan outcome for phase 1: only SSH and VNC are detected open. */
-const MOCK_OPEN_PROTOCOLS: readonly ProtocolId[] = ['ssh', 'vnc']
-
-const MOCK_SCAN_DURATION_MS = 1500
-
-const SESSION_TABS: readonly SessionTab[] = [
-  { key: 'desktop', titleKey: 'session.tabs.desktop' },
-  { key: 'terminal', titleKey: 'session.tabs.terminal' },
-  { key: 'files', titleKey: 'session.tabs.files' }
-]
+/** Session tabs implied by the protocols the user checked: ssh -> terminal +
+ * files, vnc -> remote desktop. */
+function tabsForProtocols(protocols: readonly ProtocolId[]): SessionTab[] {
+  const tabs: SessionTab[] = []
+  if (protocols.includes('vnc')) tabs.push({ key: 'desktop', titleKey: 'session.tabs.desktop' })
+  if (protocols.includes('ssh')) {
+    tabs.push({ key: 'terminal', titleKey: 'session.tabs.terminal' })
+    tabs.push({ key: 'files', titleKey: 'session.tabs.files' })
+  }
+  return tabs
+}
 
 interface AppState {
   page: Page
   targetAddress: string
   scanning: boolean
-  /** Protocols reported open by the last (mock) scan; null before any scan. */
-  openProtocols: readonly ProtocolId[] | null
+  /** Fingerprint report of the last completed scan; null before any scan. */
+  scanReport: TargetScanReport | null
+  /** Error message of the last failed scan; null when the scan succeeded. */
+  scanError: string | null
   selected: ProtocolId[]
   tabs: SessionTab[]
   activeTab: TabKind | null
   setTargetAddress: (address: string) => void
-  startScan: () => void
+  startScan: () => Promise<void>
   toggleProtocol: (id: ProtocolId) => void
-  connect: () => void
+  /** Stores the session context and switches to the session workspace. */
+  beginSession: (credentials: SessionCredentials) => void
   setActiveTab: (key: TabKind) => void
   closeTab: (key: TabKind) => void
   disconnect: () => void
@@ -44,20 +50,27 @@ export const useAppStore = create<AppState>((set, get) => ({
   page: 'scan',
   targetAddress: '192.168.50.43',
   scanning: false,
-  openProtocols: null,
+  scanReport: null,
+  scanError: null,
   selected: [],
   tabs: [],
   activeTab: null,
 
   setTargetAddress: (address) => set({ targetAddress: address }),
 
-  startScan: () => {
-    if (get().scanning) return
-    set({ scanning: true, openProtocols: null, selected: [] })
-    // Phase 1 mock: simulate a network scan, then reveal fixed results.
-    setTimeout(() => {
-      set({ scanning: false, openProtocols: MOCK_OPEN_PROTOCOLS })
-    }, MOCK_SCAN_DURATION_MS)
+  startScan: async () => {
+    const host = get().targetAddress.trim()
+    if (get().scanning || host === '') return
+    set({ scanning: true, scanReport: null, scanError: null, selected: [] })
+    try {
+      const scanReport = await window.anyremote.scan(host)
+      set({ scanning: false, scanReport })
+    } catch (err) {
+      set({
+        scanning: false,
+        scanError: err instanceof Error ? err.message : String(err)
+      })
+    }
   },
 
   toggleProtocol: (id) =>
@@ -67,12 +80,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         : [...state.selected, id]
     })),
 
-  connect: () =>
-    set({
-      page: 'session',
-      tabs: [...SESSION_TABS],
-      activeTab: 'desktop'
-    }),
+  beginSession: (credentials) => {
+    const { targetAddress, selected } = get()
+    useSessionStore.getState().setContext({
+      target: targetAddress.trim(),
+      protocols: [...selected],
+      credentials
+    })
+    const tabs = tabsForProtocols(selected)
+    set({ page: 'session', tabs, activeTab: tabs[0]?.key ?? null })
+  },
 
   setActiveTab: (key) => set({ activeTab: key }),
 
@@ -81,6 +98,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const tabs = state.tabs.filter((t) => t.key !== key)
       if (tabs.length === 0) {
         // Closing the last tab ends the session and returns to the scan page.
+        useSessionStore.getState().clearContext()
         return { tabs, activeTab: null, page: 'scan' as Page }
       }
       const activeTab =
@@ -88,6 +106,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       return { tabs, activeTab }
     }),
 
-  disconnect: () =>
+  disconnect: () => {
+    useSessionStore.getState().clearContext()
     set({ page: 'scan', tabs: [], activeTab: null, selected: [] })
+  }
 }))

@@ -1,0 +1,51 @@
+/* Terminal panel: xterm fills the tab; an overlay carries the state machine. */
+
+.terminal-root {
+  position: relative;
+  height: 100%;
+  background: #141414;
+  border: 1px solid #2c2c2c;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.terminal-host {
+  position: absolute;
+  inset: 0;
+}
+
+/* The fit addon subtracts this padding when proposing cols/rows. */
+.terminal-host .xterm {
+  height: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+}
+
+.terminal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(20, 20, 20, 0.85);
+}
+
+.terminal-overlay-text {
+  color: #c9d1d9;
+  font-size: 13px;
+}
+
+.terminal-overlay-error {
+  color: #ffa198;
+}
+
+.terminal-overlay-detail {
+  max-width: 80%;
+  color: #8b949e;
+  font-size: 12px;
+  text-align: center;
+  word-break: break-all;
+}

@@ -1,0 +1,82 @@
+/* File manager panel styles (stage 4b). Imported by FileManagerPanel.tsx,
+ * so it lands after styles/global.css and may override the phase-1 rules. */
+
+/* Two equal panes now that the local side is a full table too. */
+.files-columns {
+  grid-template-columns: 1fr 1fr;
+}
+
+.files-placeholder {
+  align-items: center;
+  justify-content: center;
+}
+
+.files-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.files-nav .ant-breadcrumb {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.files-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #1a1a1a;
+  border: 1px solid #2c2c2c;
+  border-radius: 6px;
+}
+
+/* Directory rows hint that double-click navigates. */
+.files-table-wrap .ant-table-row {
+  cursor: default;
+}
+
+/* ---------- transfer queue ---------- */
+
+.transfer-queue {
+  margin-top: 8px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 132px;
+  overflow: auto;
+  background: #1a1a1a;
+  border: 1px solid #2c2c2c;
+  border-radius: 6px;
+}
+
+.transfer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.6s ease;
+}
+
+.transfer-item .ant-progress {
+  flex: 1;
+  min-width: 0;
+  margin-inline-end: 0;
+}
+
+.transfer-name {
+  font-size: 12px;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Completed items dim while they wait to fade out of the queue. */
+.transfer-done {
+  opacity: 0.45;
+}

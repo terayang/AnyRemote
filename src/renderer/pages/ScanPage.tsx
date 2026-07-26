@@ -1,8 +1,9 @@
 import { SearchOutlined } from '@ant-design/icons'
-import { Button, Input, Progress, Space, Typography } from 'antd'
+import { Button, Input, Space, Spin, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PROTOCOLS } from '../../shared/protocols'
+import CredentialsModal from '../components/CredentialsModal'
 import ProtocolCard from '../components/ProtocolCard'
 import { useAppStore } from '../store'
 
@@ -13,27 +14,38 @@ export default function ScanPage() {
   const targetAddress = useAppStore((s) => s.targetAddress)
   const setTargetAddress = useAppStore((s) => s.setTargetAddress)
   const scanning = useAppStore((s) => s.scanning)
-  const openProtocols = useAppStore((s) => s.openProtocols)
+  const scanReport = useAppStore((s) => s.scanReport)
+  const scanError = useAppStore((s) => s.scanError)
   const selected = useAppStore((s) => s.selected)
   const startScan = useAppStore((s) => s.startScan)
   const toggleProtocol = useAppStore((s) => s.toggleProtocol)
-  const connect = useAppStore((s) => s.connect)
+  const beginSession = useAppStore((s) => s.beginSession)
 
-  // Fake but smooth progress bar for the mock scan (~1.5s).
-  const [percent, setPercent] = useState(0)
+  const [messageApi, contextHolder] = message.useMessage()
+  const [credsOpen, setCredsOpen] = useState(false)
+
+  // Elapsed-time ticker shown next to the spinner while a scan runs.
+  const [elapsedMs, setElapsedMs] = useState(0)
   useEffect(() => {
     if (!scanning) {
-      setPercent(0)
+      setElapsedMs(0)
       return
     }
-    const timer = setInterval(() => {
-      setPercent((p) => Math.min(p + 6, 95))
-    }, 90)
+    const startedAt = Date.now()
+    const timer = setInterval(() => setElapsedMs(Date.now() - startedAt), 100)
     return () => clearInterval(timer)
   }, [scanning])
 
+  // Surface scan failures via an antd message toast.
+  useEffect(() => {
+    if (scanError) {
+      void messageApi.error(`${t('scan.failed')}: ${scanError}`)
+    }
+  }, [scanError, messageApi, t])
+
   return (
     <div className="scan-page">
+      {contextHolder}
       <Space direction="vertical" size={4} align="center" style={{ marginTop: 48 }}>
         <Title level={2} style={{ margin: 0 }}>
           {t('app.title')}
@@ -51,14 +63,14 @@ export default function ScanPage() {
             value={targetAddress}
             disabled={scanning}
             onChange={(e) => setTargetAddress(e.target.value)}
-            onPressEnter={startScan}
+            onPressEnter={() => void startScan()}
           />
           <Button
             type="primary"
             size="large"
             icon={<SearchOutlined />}
             loading={scanning}
-            onClick={startScan}
+            onClick={() => void startScan()}
           >
             {t('scan.start')}
           </Button>
@@ -67,37 +79,56 @@ export default function ScanPage() {
           {t('scan.shortcutHint')}
         </Text>
         {scanning && (
-          <div style={{ width: 420 }}>
+          <Space size={8}>
+            <Spin size="small" />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {t('scan.scanning')}
+              {t('scan.scanning')} ·{' '}
+              {t('scan.elapsed', { seconds: (elapsedMs / 1000).toFixed(1) })}
             </Text>
-            <Progress percent={percent} size="small" status="active" showInfo={false} />
-          </div>
+          </Space>
         )}
       </Space>
 
-      {openProtocols && (
+      {scanReport && (
         <div className="protocol-grid">
-          {PROTOCOLS.map((meta) => (
-            <ProtocolCard
-              key={meta.id}
-              meta={meta}
-              open={openProtocols.includes(meta.id)}
-              selected={selected.includes(meta.id)}
-              onToggle={toggleProtocol}
-            />
-          ))}
+          {PROTOCOLS.map((meta) => {
+            const result = scanReport.results.find((r) => r.protocolId === meta.id)
+            if (!result) return null
+            return (
+              <ProtocolCard
+                key={meta.id}
+                meta={meta}
+                result={result}
+                selected={selected.includes(meta.id)}
+                onToggle={toggleProtocol}
+              />
+            )
+          })}
         </div>
       )}
 
-      {openProtocols && (
+      {scanReport && (
         <div className="scan-footer">
           <Text type="secondary">{t('scan.selectedCount', { count: selected.length })}</Text>
-          <Button type="primary" disabled={selected.length === 0} onClick={connect}>
+          <Button
+            type="primary"
+            disabled={selected.length === 0}
+            onClick={() => setCredsOpen(true)}
+          >
             {t('scan.connect')}
           </Button>
         </div>
       )}
+
+      <CredentialsModal
+        open={credsOpen}
+        target={targetAddress.trim()}
+        onCancel={() => setCredsOpen(false)}
+        onSubmit={(credentials) => {
+          setCredsOpen(false)
+          beginSession(credentials)
+        }}
+      />
     </div>
   )
 }

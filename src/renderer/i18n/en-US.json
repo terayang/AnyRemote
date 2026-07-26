@@ -8,7 +8,10 @@
     "start": "Start Scan",
     "scanning": "Detecting protocols…",
     "detected": "Detected",
+    "unidentified": "Open, unidentified",
     "closed": "Closed",
+    "elapsed": "{{seconds}}s elapsed",
+    "failed": "Scan failed",
     "supported": "Supported",
     "unsupported": "Not yet",
     "unsupportedTooltip": "Not supported yet, planned",
@@ -24,6 +27,19 @@
       "terminal": "Terminal",
       "files": "Files"
     }
+  },
+  "credentials": {
+    "title": "Connection Credentials",
+    "username": "Username",
+    "usernameRequired": "Please enter a username",
+    "password": "Password",
+    "advanced": "Advanced options",
+    "privateKey": "Private key path",
+    "privateKeyPlaceholder": "e.g. ~/.ssh/id_ed25519",
+    "passphrase": "Key passphrase",
+    "passphrasePlaceholder": "Passphrase protecting the key (if any)",
+    "submit": "Connect",
+    "cancel": "Cancel"
   },
   "desktop": {
     "placeholder": "Remote desktop placeholder · {{resolution}}",

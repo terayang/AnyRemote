@@ -8,7 +8,10 @@
     "start": "开始扫描",
     "scanning": "正在探测协议…",
     "detected": "已检测到",
+    "unidentified": "开放但未识别",
     "closed": "未开放",
+    "elapsed": "已耗时 {{seconds}} 秒",
+    "failed": "扫描失败",
     "supported": "支持",
     "unsupported": "暂不支持",
     "unsupportedTooltip": "暂不支持，规划中",
@@ -24,6 +27,19 @@
       "terminal": "终端",
       "files": "文件管理"
     }
+  },
+  "credentials": {
+    "title": "连接凭据",
+    "username": "用户名",
+    "usernameRequired": "请输入用户名",
+    "password": "密码",
+    "advanced": "高级选项",
+    "privateKey": "私钥路径",
+    "privateKeyPlaceholder": "如 ~/.ssh/id_ed25519",
+    "passphrase": "私钥口令",
+    "passphrasePlaceholder": "私钥加密口令（如有）",
+    "submit": "连接",
+    "cancel": "取消"
   },
   "desktop": {
     "placeholder": "远程桌面占位 · {{resolution}}",
