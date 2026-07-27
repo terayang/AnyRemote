@@ -1,5 +1,5 @@
-import { DisconnectOutlined, ReloadOutlined, WarningOutlined } from '@ant-design/icons'
-import { Button, Segmented, Select, Space, Spin, Tooltip, Typography } from 'antd'
+import { DisconnectOutlined, ReloadOutlined, SettingOutlined, WarningOutlined } from '@ant-design/icons'
+import { Button, Popover, Segmented, Select, Space, Spin, Tooltip, Typography } from 'antd'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSessionStore } from '../store/session'
@@ -27,6 +27,12 @@ export default function DesktopPanel() {
   const setScaleMode = useVncStore((s) => s.setScaleMode)
   const cursorMode = useVncStore((s) => s.cursorMode)
   const setCursorMode = useVncStore((s) => s.setCursorMode)
+  const encMode = useVncStore((s) => s.encMode)
+  const quality = useVncStore((s) => s.quality)
+  const compression = useVncStore((s) => s.compression)
+  const setEncMode = useVncStore((s) => s.setEncMode)
+  const setQuality = useVncStore((s) => s.setQuality)
+  const setCompression = useVncStore((s) => s.setCompression)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // The mount lifecycle owns the connection: exactly one attach per mount,
@@ -54,6 +60,70 @@ export default function DesktopPanel() {
     unknown: t('vnc.errorUnknown', { defaultValue: '连接已断开' })
   }
 
+  const displaySettings = (
+    <Space direction="vertical" size={10} style={{ width: 240 }}>
+      <div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {t('desktop.encMode')}
+        </Text>
+        <Select
+          size="small"
+          style={{ width: '100%' }}
+          value={encMode}
+          onChange={setEncMode}
+          options={[
+            { value: 'auto', label: t('desktop.encAuto') },
+            { value: 'zrle', label: 'ZRLE' },
+            { value: 'hextile', label: 'Hextile' },
+            { value: 'raw', label: 'Raw' }
+          ]}
+        />
+        <div>
+          <Text type="secondary" style={{ fontSize: 11 }}>
+            {t('desktop.encHint')}
+          </Text>
+        </div>
+      </div>
+      <div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {t('desktop.quality')}
+        </Text>
+        <Select
+          size="small"
+          style={{ width: '100%' }}
+          value={quality}
+          onChange={setQuality}
+          options={[
+            { value: 8, label: t('desktop.qualityHigh') },
+            { value: 6, label: t('desktop.qualityMid') },
+            { value: 3, label: t('desktop.qualityLow') }
+          ]}
+        />
+        <div>
+          <Text type="secondary" style={{ fontSize: 11 }}>
+            {t('desktop.qualityHint')}
+          </Text>
+        </div>
+      </div>
+      <div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {t('desktop.compression')}
+        </Text>
+        <Select
+          size="small"
+          style={{ width: '100%' }}
+          value={compression}
+          onChange={setCompression}
+          options={[
+            { value: 6, label: t('desktop.compSaver') },
+            { value: 2, label: t('desktop.compBalanced') },
+            { value: 0, label: t('desktop.compLowCpu') }
+          ]}
+        />
+      </div>
+    </Space>
+  )
+
   return (
     <div className="desktop-panel">
       <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -79,6 +149,14 @@ export default function DesktopPanel() {
               ]}
             />
           </Tooltip>
+          <Popover
+            content={displaySettings}
+            title={t('desktop.settings')}
+            trigger="click"
+            placement="bottomLeft"
+          >
+            <Button size="small" icon={<SettingOutlined />} />
+          </Popover>
           {desktopName !== '' && (
             <Text className="mono" type="secondary" style={{ fontSize: 12 }}>
               {desktopName}

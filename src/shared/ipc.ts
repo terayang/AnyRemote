@@ -62,6 +62,12 @@ export interface VncStartBridgeParams {
   port: number
   username?: string
   password?: string
+  /**
+   * Pixel-encoding preference (RFB encoding numbers, e.g. [16] = ZRLE). When
+   * set, the bridge rewrites the client's SetEncodings messages to prefer
+   * these encodings; undefined leaves them untouched (full passthrough).
+   */
+  encodings?: number[]
 }
 
 /** Result of vnc.startBridge: the id used to stop it and the loopback WS port. */

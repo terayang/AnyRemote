@@ -41,6 +41,10 @@ type RfbInstance = EventTarget & {
   scaleViewport: boolean
   /** Shows a small dot cursor when the server sends no cursor shape. */
   showDotCursor: boolean
+  /** Tight JPEG quality 0-9; the setter re-sends SetEncodings when connected. */
+  qualityLevel: number
+  /** Zlib compression level 0-9; the setter re-sends SetEncodings when connected. */
+  compressionLevel: number
   /** Drops keyboard/mouse input instead of forwarding it when true. */
   viewOnly: boolean
   /** Starts a clean disconnection; a 'disconnect' event follows. */
@@ -144,6 +148,17 @@ function teardown(session: LiveSession, opts: { disconnectRfb: boolean }): void 
 /** Cursor display modes: remote = noVNC-managed cursor overlay; local = always show the OS cursor. */
 export type VncCursorMode = 'remote' | 'local'
 
+/** Pixel-encoding preference applied via the bridge's SetEncodings rewrite. */
+export type VncEncMode = 'auto' | 'zrle' | 'hextile' | 'raw'
+
+/** encMode -> RFB encoding numbers passed to the bridge (undefined = passthrough). */
+const ENC_MODE_TO_ENCODINGS: Record<VncEncMode, number[] | undefined> = {
+  auto: undefined,
+  zrle: [16],
+  hextile: [5],
+  raw: [0]
+}
+
 interface VncState {
   status: VncStatus
   /** Classified failure while status === 'error'; null otherwise. */
@@ -152,8 +167,16 @@ interface VncState {
   desktopName: string
   scaleMode: VncScaleMode
   cursorMode: VncCursorMode
+  encMode: VncEncMode
+  /** Tight JPEG quality 0-9 (effective only with Tight/JPEG-capable servers). */
+  quality: number
+  /** Zlib compression level 0-9 (higher = less bandwidth, more CPU). */
+  compression: number
   setScaleMode: (mode: VncScaleMode) => void
   setCursorMode: (mode: VncCursorMode) => void
+  setEncMode: (mode: VncEncMode) => void
+  setQuality: (level: number) => void
+  setCompression: (level: number) => void
 }
 
 export const useVncStore = create<VncState>((set) => ({
@@ -165,12 +188,30 @@ export const useVncStore = create<VncState>((set) => ({
   // cursor shapes (noVNC #1430), so a noVNC-managed cursor is either
   // invisible or falls back to the dot — the local cursor is always correct.
   cursorMode: 'local',
+  encMode: 'auto',
+  quality: 6,
+  compression: 2,
   setScaleMode: (mode) => {
     set({ scaleMode: mode })
     // Apply live when a session is up; attachVnc reads the store at creation.
     if (live?.rfb) live.rfb.scaleViewport = mode === 'fit'
   },
-  setCursorMode: (mode) => set({ cursorMode: mode })
+  setCursorMode: (mode) => set({ cursorMode: mode }),
+  setEncMode: (mode) => {
+    set({ encMode: mode })
+    // The encoding preference is negotiated at (re)connect time via the
+    // bridge's SetEncodings rewrite, so re-attach to apply it.
+    if (live !== null) void retryVnc()
+  },
+  setQuality: (level) => {
+    set({ quality: level })
+    // noVNC re-sends SetEncodings on change when connected (live effect).
+    if (live?.rfb) live.rfb.qualityLevel = level
+  },
+  setCompression: (level) => {
+    set({ compression: level })
+    if (live?.rfb) live.rfb.compressionLevel = level
+  }
 }))
 
 /**
@@ -196,7 +237,8 @@ export async function attachVnc(
 
   let handle: VncBridgeHandle
   try {
-    handle = await window.anyremote.vnc.startBridge(params)
+    const encodings = ENC_MODE_TO_ENCODINGS[useVncStore.getState().encMode]
+    handle = await window.anyremote.vnc.startBridge({ ...params, encodings })
   } catch (err) {
     if (ownsSlot()) {
       useVncStore.setState({ status: 'error', errorKind: classifyIpcError(err) })
@@ -222,7 +264,11 @@ export async function attachVnc(
 
   const rfb = new RFB(container, ws)
   session.rfb = rfb
-  rfb.scaleViewport = useVncStore.getState().scaleMode === 'fit'
+  const { scaleMode, quality, compression } = useVncStore.getState()
+  rfb.scaleViewport = scaleMode === 'fit'
+  // Picked up by the initial SetEncodings (noVNC reads them in _sendEncodings).
+  rfb.qualityLevel = quality
+  rfb.compressionLevel = compression
 
   rfb.addEventListener('connect', () => {
     if (ownsSlot()) useVncStore.setState({ status: 'connected' })

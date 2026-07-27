@@ -14,7 +14,14 @@
  *   noVNC  -> bridge: ClientInit
  *   bridge -> noVNC:  the target's real ServerInit, verbatim
  *
- * Afterwards frames are relayed transparently in both directions.
+ * Afterwards frames are relayed transparently in both directions — with one
+ * exception: when `encodings` is given, the client->server direction goes
+ * through an incremental RFB client-message parser that rewrites
+ * SetEncodings messages to prefer the configured pixel encodings (CopyRect +
+ * preference + Raw fallback, pseudo-encodings preserved). The parser is
+ * fail-open: an unknown message type permanently disables rewriting for that
+ * connection and the stream falls back to pure passthrough, never breaking
+ * the session over a parse failure.
  *
  * Single-client semantics: a bridge instance serves ONE VNC session. A
  * second WebSocket client connecting while one is active is rejected with
@@ -40,6 +47,12 @@ export interface VncBridgeOptions extends VncCredentials {
   port: number
   /** TCP connect + RFB handshake deadline in ms (default 10000). */
   timeoutMs?: number
+  /**
+   * Pixel-encoding preference (RFB encoding numbers, e.g. [16] = ZRLE). When
+   * set, client SetEncodings messages are rewritten to prefer these
+   * encodings; undefined = passthrough without rewriting.
+   */
+  encodings?: number[]
 }
 
 export interface VncBridge {
@@ -115,10 +128,21 @@ async function serveClient(ws: WebSocket, options: VncBridgeOptions): Promise<vo
 
     // Pipe phase. The client may have coalesced ClientInit with its first
     // protocol message; forward any such leftover before switching modes.
+    // With an encoding preference configured, the client->server direction
+    // runs through the SetEncodings rewriter from the leftover on.
+    const rewriter =
+      options.encodings === undefined ? null : new SetEncodingsRewriter(options.encodings)
+    const forward = (chunk: Buffer): void => {
+      if (rewriter === null) {
+        tcp.write(chunk)
+        return
+      }
+      for (const out of rewriter.push(chunk)) tcp.write(out)
+    }
     const leftover = reader.drainBuffer()
-    if (leftover.length > 0) tcp.write(leftover)
+    if (leftover.length > 0) forward(leftover)
     ws.off('message', feed)
-    ws.on('message', (data: RawData) => tcp.write(toBuffer(data)))
+    ws.on('message', (data: RawData) => forward(toBuffer(data)))
     tcp.on('data', (chunk: Buffer) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(chunk)
     })
@@ -193,6 +217,111 @@ function closeWithError(ws: WebSocket, kind: VncBridgeErrorKind, err: unknown): 
     message: (err instanceof Error ? err.message : String(err)).slice(0, 80)
   }
   ws.close(VNC_BRIDGE_CLOSE_CODES[kind], JSON.stringify(payload))
+}
+
+// ---------------------------------------------------------------------------
+// SetEncodings rewriter (client -> server, pipe phase)
+// ---------------------------------------------------------------------------
+
+/** Fixed lengths of the RFB client messages the parser understands. */
+const CLIENT_MESSAGE_LENGTH: Readonly<Record<number, number>> = {
+  0: 20, // SetPixelFormat: type + pad(3) + pixel-format(16)
+  3: 10, // FramebufferUpdateRequest
+  4: 8, // KeyEvent
+  5: 6 // PointerEvent
+}
+
+const ENCODING_COPYRECT = 1
+const ENCODING_RAW = 0
+
+/**
+ * Incremental RFB client-message parser that rewrites SetEncodings messages
+ * to prefer a configured pixel-encoding list. Only message boundaries are
+ * tracked; all other messages pass through untouched.
+ *
+ * Fail-open: an unknown message type permanently disables rewriting for the
+ * connection — buffered bytes are forwarded verbatim and the stream degrades
+ * to pure passthrough, never breaking the session over a parse failure.
+ */
+class SetEncodingsRewriter {
+  private readonly preference: number[]
+  private buffer: Buffer = Buffer.alloc(0)
+  private disabled = false
+
+  constructor(preference: number[]) {
+    this.preference = preference
+  }
+
+  /** Feeds bytes; returns the chunks to forward (rewrite applied). */
+  push(chunk: Buffer): Buffer[] {
+    if (this.disabled) return [chunk]
+    this.buffer = Buffer.concat([this.buffer, chunk])
+    const out: Buffer[] = []
+    for (;;) {
+      const message = this.takeMessage()
+      if (message === null) break
+      out.push(message)
+    }
+    return out
+  }
+
+  /** Extracts one complete message from the buffer, or null when incomplete. */
+  private takeMessage(): Buffer | null {
+    const buf = this.buffer
+    if (buf.length === 0) return null
+    const type = buf[0]
+
+    if (type === 2) {
+      // SetEncodings: type + pad + count(2) + count*4
+      if (buf.length < 4) return null
+      const length = 4 + buf.readUInt16BE(2) * 4
+      if (buf.length < length) return null
+      const rewritten = this.rewriteSetEncodings(buf.subarray(0, length))
+      this.buffer = buf.subarray(length)
+      return rewritten
+    }
+
+    let length: number
+    if (type === 6) {
+      // ClientCutText: type + pad(3) + length(4) + text
+      if (buf.length < 8) return null
+      length = 8 + buf.readUInt32BE(4)
+    } else {
+      length = CLIENT_MESSAGE_LENGTH[type] ?? -1
+    }
+
+    if (length === -1) {
+      this.disabled = true
+      const rest = this.buffer
+      this.buffer = Buffer.alloc(0)
+      return rest.length > 0 ? rest : null
+    }
+    if (buf.length < length) return null
+    this.buffer = buf.subarray(length)
+    return buf.subarray(0, length)
+  }
+
+  /**
+   * Rebuilds a SetEncodings message: CopyRect + preference + Raw fallback,
+   * with the client's pseudo-encodings (negative / >255 values) preserved in
+   * their original order.
+   */
+  private rewriteSetEncodings(message: Buffer): Buffer {
+    const count = message.readUInt16BE(2)
+    const pseudo: number[] = []
+    for (let i = 0; i < count; i++) {
+      const enc = message.readInt32BE(4 + i * 4)
+      if (enc < 0 || enc > 255) pseudo.push(enc)
+    }
+    const pixel = [ENCODING_COPYRECT, ...this.preference]
+    if (!this.preference.includes(ENCODING_RAW)) pixel.push(ENCODING_RAW)
+    const all = [...pixel, ...pseudo]
+    const out = Buffer.alloc(4 + all.length * 4)
+    out[0] = 2
+    out.writeUInt16BE(all.length, 2)
+    all.forEach((enc, i) => out.writeInt32BE(enc, 4 + i * 4))
+    return out
+  }
 }
 
 function toBuffer(data: RawData): Buffer {
