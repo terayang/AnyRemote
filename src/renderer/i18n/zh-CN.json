@@ -85,6 +85,9 @@
     "compSaver": "省带宽",
     "compBalanced": "均衡",
     "compLowCpu": "低 CPU",
+    "colorDepth": "色深",
+    "depth24": "24 位（真彩）",
+    "depth16": "16 位（省带宽）",
     "disconnect": "断开"
   },
   "terminal": {

@@ -172,11 +172,14 @@ interface VncState {
   quality: number
   /** Zlib compression level 0-9 (higher = less bandwidth, more CPU). */
   compression: number
+  /** Pixel depth in bits: 24 = true color, 16 = RGB565 (about half the bandwidth). */
+  colorDepth: 16 | 24
   setScaleMode: (mode: VncScaleMode) => void
   setCursorMode: (mode: VncCursorMode) => void
   setEncMode: (mode: VncEncMode) => void
   setQuality: (level: number) => void
   setCompression: (level: number) => void
+  setColorDepth: (depth: 16 | 24) => void
 }
 
 export const useVncStore = create<VncState>((set) => ({
@@ -191,6 +194,7 @@ export const useVncStore = create<VncState>((set) => ({
   encMode: 'auto',
   quality: 6,
   compression: 2,
+  colorDepth: 24,
   setScaleMode: (mode) => {
     set({ scaleMode: mode })
     // Apply live when a session is up; attachVnc reads the store at creation.
@@ -211,6 +215,11 @@ export const useVncStore = create<VncState>((set) => ({
   setCompression: (level) => {
     set({ compression: level })
     if (live?.rfb) live.rfb.compressionLevel = level
+  },
+  setColorDepth: (depth) => {
+    set({ colorDepth: depth })
+    // Pixel format is negotiated once during init, so re-attach to apply it.
+    if (live !== null) void retryVnc()
   }
 }))
 
@@ -264,11 +273,15 @@ export async function attachVnc(
 
   const rfb = new RFB(container, ws)
   session.rfb = rfb
-  const { scaleMode, quality, compression } = useVncStore.getState()
+  const { scaleMode, quality, compression, colorDepth } = useVncStore.getState()
   rfb.scaleViewport = scaleMode === 'fit'
   // Picked up by the initial SetEncodings (noVNC reads them in _sendEncodings).
   rfb.qualityLevel = quality
   rfb.compressionLevel = compression
+  // Requested pixel depth: no public API, but _fbDepth is read when noVNC
+  // sends SetPixelFormat during init (noVNC 1.x), which happens after the
+  // socket opens — always later than this synchronous assignment.
+  ;(rfb as unknown as { _fbDepth: number })._fbDepth = colorDepth
 
   rfb.addEventListener('connect', () => {
     if (ownsSlot()) useVncStore.setState({ status: 'connected' })

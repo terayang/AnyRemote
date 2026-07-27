@@ -85,6 +85,9 @@
     "compSaver": "Saver",
     "compBalanced": "Balanced",
     "compLowCpu": "Low CPU",
+    "colorDepth": "Color depth",
+    "depth24": "24-bit (true color)",
+    "depth16": "16-bit (saves bandwidth)",
     "disconnect": "Disconnect"
   },
   "terminal": {

@@ -33,6 +33,8 @@ export default function DesktopPanel() {
   const setEncMode = useVncStore((s) => s.setEncMode)
   const setQuality = useVncStore((s) => s.setQuality)
   const setCompression = useVncStore((s) => s.setCompression)
+  const colorDepth = useVncStore((s) => s.colorDepth)
+  const setColorDepth = useVncStore((s) => s.setColorDepth)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // The mount lifecycle owns the connection: exactly one attach per mount,
@@ -83,6 +85,21 @@ export default function DesktopPanel() {
             {t('desktop.encHint')}
           </Text>
         </div>
+      </div>
+      <div>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {t('desktop.colorDepth')}
+        </Text>
+        <Select
+          size="small"
+          style={{ width: '100%' }}
+          value={colorDepth}
+          onChange={(v) => setColorDepth(v as 16 | 24)}
+          options={[
+            { value: 24, label: t('desktop.depth24') },
+            { value: 16, label: t('desktop.depth16') }
+          ]}
+        />
       </div>
       <div>
         <Text type="secondary" style={{ fontSize: 12 }}>
