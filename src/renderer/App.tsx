@@ -18,7 +18,14 @@ export default function App() {
       const key = e.key.toLowerCase()
       if (key === 'k') {
         e.preventDefault()
-        document.getElementById('target-address-input')?.focus()
+        // ⌘K dispatches per page: on the scan page it focuses the target
+        // input; in the session workspace it opens the new-connection modal.
+        const { page, setNewConnectionOpen } = useAppStore.getState()
+        if (page === 'session') {
+          setNewConnectionOpen(true)
+        } else {
+          document.getElementById('target-address-input')?.focus()
+        }
       } else if (key === 'w') {
         e.preventDefault()
         const { activeTab, closeTab } = useAppStore.getState()

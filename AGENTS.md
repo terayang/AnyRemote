@@ -45,4 +45,4 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
   - 测试：`npm test`（vitest 单测）；类型检查 `npm run typecheck`
   - 打包：`npm run build`（electron-vite build → `out/`）
   - 安装包：`npm run dist`（本机 macOS dmg，arm64 + x64）/ `npm run dist:win`（Windows NSIS，须在 Windows 上运行）/ `npm run dist:all`；electron-builder，配置在 electron-builder.yml，产物 → `dist/`，publish 关闭只产安装包；详见 docs/RELEASE.md
-  - 冒烟：`npm run smoke`（需先 `npm run build`；Playwright Electron 驱动真实应用，依次为 scripts/smoke-scan / smoke-terminal / smoke-files / smoke-vnc / smoke-saved 五个 .mjs，也可单独运行）
+  - 冒烟：`npm run smoke`（需先 `npm run build`；Playwright Electron 驱动真实应用，依次为 scripts/smoke-scan / smoke-terminal / smoke-files / smoke-vnc / smoke-saved / smoke-ux 六个 .mjs，也可单独运行）

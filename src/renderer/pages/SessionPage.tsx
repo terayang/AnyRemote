@@ -1,10 +1,11 @@
 import { ApiOutlined } from '@ant-design/icons'
-import { Layout, Space, Tabs, Tag, Typography, message } from 'antd'
+import { Button, Layout, Modal, Popconfirm, Space, Tabs, Tag, Typography, message } from 'antd'
 import { useEffect, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ipcErrorMessage } from '../../shared/ipc'
 import DesktopPanel from '../components/DesktopPanel'
 import FileManagerPanel from '../components/FileManagerPanel'
+import NewConnectionModal from '../components/NewConnectionModal'
 import TerminalPanel from '../components/TerminalPanel'
 import { useAppStore, type TabKind } from '../store'
 import { savedToCredentials, useSavedConnectionsStore } from '../store/savedConnections'
@@ -27,6 +28,9 @@ export default function SessionPage() {
   const setActiveTab = useAppStore((s) => s.setActiveTab)
   const closeTab = useAppStore((s) => s.closeTab)
   const beginSavedSession = useAppStore((s) => s.beginSavedSession)
+  const disconnect = useAppStore((s) => s.disconnect)
+  const newConnectionOpen = useAppStore((s) => s.newConnectionOpen)
+  const setNewConnectionOpen = useAppStore((s) => s.setNewConnectionOpen)
   const context = useSessionStore((s) => s.context)
   const target = context?.target ?? targetAddress
   const protocolTag =
@@ -35,20 +39,22 @@ export default function SessionPage() {
       : null
 
   const [messageApi, contextHolder] = message.useMessage()
+  const [modalApi, modalHolder] = Modal.useModal()
   const savedConnections = useSavedConnectionsStore((s) => s.connections)
   const refreshSaved = useSavedConnectionsStore((s) => s.refresh)
+  // The saved entry the current session started from (A5/A6), when any.
+  const currentSaved = savedConnections.find((c) => c.id === context?.savedId)
 
   useEffect(() => {
     void refreshSaved()
   }, [refreshSaved])
 
   /**
-   * Sider entry click: ends the current session and reconnects to the saved
-   * target with its decrypted credentials (beginSavedSession resets the
-   * panels' per-session stores; the panels close their own SSH/VNC resources
-   * via their context-change cleanups).
+   * Reconnects to a saved target with its decrypted credentials
+   * (beginSavedSession resets the panels' per-session stores; the panels
+   * close their own SSH/VNC resources via their context-change cleanups).
    */
-  const switchToSaved = async (id: string): Promise<void> => {
+  const openSavedSession = async (id: string): Promise<void> => {
     try {
       const conn = await window.anyremote.connections.get(id)
       if (!conn) {
@@ -56,7 +62,7 @@ export default function SessionPage() {
         return
       }
       beginSavedSession(
-        { host: conn.host, protocols: conn.protocols },
+        { id: conn.id, host: conn.host, protocols: conn.protocols },
         savedToCredentials(conn)
       )
     } catch (err) {
@@ -64,13 +70,42 @@ export default function SessionPage() {
     }
   }
 
+  /**
+   * Sider entry click. Switching targets replaces the live session
+   * (single-session model), so it always asks first; cancelling leaves the
+   * current session untouched.
+   */
+  const switchToSaved = (id: string): void => {
+    if (!context) {
+      void openSavedSession(id)
+      return
+    }
+    void modalApi.confirm({
+      title: t('session.switchNewConfirm', { target: context.target }),
+      okText: t('credentials.submit'),
+      cancelText: t('saved.cancel'),
+      onOk: () => void openSavedSession(id)
+    })
+  }
+
   return (
     <Layout style={{ height: '100%' }}>
       {contextHolder}
       <Sider width={216} className="session-sider">
+        {modalHolder}
         <div className="session-sider-header">
           <ApiOutlined style={{ color: '#4c8dff' }} />
           <Text strong>AnyRemote</Text>
+        </div>
+        <div className="session-sider-newconn">
+          <Button
+            id="new-connection-button"
+            type="primary"
+            block
+            onClick={() => setNewConnectionOpen(true)}
+          >
+            {t('session.newConnection')}
+          </Button>
         </div>
         <Text type="secondary" style={{ fontSize: 12, padding: '0 12px' }}>
           {t('session.saved')}
@@ -78,7 +113,9 @@ export default function SessionPage() {
         <div className="saved-list">
           <div className="saved-item saved-item-active">
             <Space size={6}>
-              <Text style={{ fontSize: 13 }}>{t('session.current')}</Text>
+              <Text style={{ fontSize: 13 }}>
+                {currentSaved ? `${t('session.current')} · ${currentSaved.name}` : t('session.current')}
+              </Text>
               {protocolTag && (
                 <Tag color="blue" style={{ marginInlineEnd: 0 }}>
                   {protocolTag}
@@ -88,11 +125,18 @@ export default function SessionPage() {
             <Text className="mono" type="secondary" style={{ fontSize: 12 }}>
               {target}
             </Text>
+            {currentSaved && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {currentSaved.username}
+              </Text>
+            )}
           </div>
           {savedConnections
-            .filter((c) => c.host !== target)
+            // A5: hide only the exact identity the session started from —
+            // same-host siblings (other usernames) stay visible and clickable.
+            .filter((c) => c.id !== context?.savedId)
             .map((c) => (
-              <div key={c.id} className="saved-item" onClick={() => void switchToSaved(c.id)}>
+              <div key={c.id} className="saved-item" onClick={() => switchToSaved(c.id)}>
                 <Space size={6}>
                   <Text style={{ fontSize: 13 }}>{c.name}</Text>
                   {c.protocols.map((p) => (
@@ -106,6 +150,19 @@ export default function SessionPage() {
                 </Text>
               </div>
             ))}
+        </div>
+        <div className="session-sider-footer">
+          <Popconfirm
+            title={t('session.disconnectConfirm', { target })}
+            okText={t('session.disconnect')}
+            cancelText={t('saved.cancel')}
+            placement="topLeft"
+            onConfirm={() => disconnect()}
+          >
+            <Button id="disconnect-button" type="text" danger block>
+              {t('session.disconnect')}
+            </Button>
+          </Popconfirm>
         </div>
       </Sider>
       <Content style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column' }}>
@@ -128,6 +185,10 @@ export default function SessionPage() {
           })}
         />
       </Content>
+      <NewConnectionModal
+        open={newConnectionOpen}
+        onClose={() => setNewConnectionOpen(false)}
+      />
     </Layout>
   )
 }

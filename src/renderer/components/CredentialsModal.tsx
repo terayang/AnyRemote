@@ -1,6 +1,7 @@
 import { Checkbox, Collapse, Form, Input, Modal, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSavedConnectionsStore } from '../store/savedConnections'
 import type { SessionCredentials } from '../store/session'
 
 const { Text } = Typography
@@ -15,6 +16,12 @@ interface CredentialsFormValues {
 /** Save intent collected alongside the credentials (F5). */
 export interface SaveConnectionRequest {
   name: string
+  /**
+   * Set when an entry with the same host + username already exists (B7
+   * dedup): the caller passes it as SavedConnectionInput.id so the save takes
+   * the update branch instead of creating a duplicate.
+   */
+  existingId?: string
 }
 
 interface CredentialsModalProps {
@@ -54,6 +61,17 @@ export default function CredentialsModal({
     }
   }, [open, target])
 
+  // B7 dedup: an entry with the same host + username would be updated, not
+  // duplicated — the checkbox label says so and its id rides along on submit.
+  const usernameValue = Form.useWatch('username', form)
+  const savedConnections = useSavedConnectionsStore((s) => s.connections)
+  const normalizedTarget = target.trim().toLowerCase()
+  const existing = savedConnections.find(
+    (c) =>
+      c.host.trim().toLowerCase() === normalizedTarget &&
+      c.username === (usernameValue ?? '').trim()
+  )
+
   const handleOk = async (): Promise<void> => {
     const values = await form.validateFields()
     onSubmit(
@@ -63,7 +81,7 @@ export default function CredentialsModal({
         privateKey: values.privateKey?.trim() || undefined,
         passphrase: values.passphrase || undefined
       },
-      saveChecked ? { name: saveName.trim() || target } : undefined
+      saveChecked ? { name: saveName.trim() || target, existingId: existing?.id } : undefined
     )
   }
 
@@ -122,7 +140,7 @@ export default function CredentialsModal({
             checked={saveChecked}
             onChange={(e) => setSaveChecked(e.target.checked)}
           >
-            {t('credentials.saveThis')}
+            {t(existing ? 'credentials.updateThis' : 'credentials.saveThis')}
           </Checkbox>
           <Input
             id="cred-save-name"

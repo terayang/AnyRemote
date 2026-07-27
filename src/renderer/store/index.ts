@@ -68,15 +68,19 @@ interface AppState {
   /**
    * Starts a session straight from a saved connection (scan page double-click
    * or session-sider click): drops the current session's resources, then
-   * opens the saved target's tabs with its decrypted credentials.
+   * opens the saved target's tabs with its decrypted credentials. The saved
+   * entry's id is kept in the session context (SessionContext.savedId).
    */
   beginSavedSession: (
-    saved: { host: string; protocols: string[] },
+    saved: { host: string; protocols: string[]; id?: string },
     credentials: SessionCredentials
   ) => void
   setActiveTab: (key: TabKind) => void
   closeTab: (key: TabKind) => void
   disconnect: () => void
+  /** NewConnectionModal visibility (session page button / ⌘K on session page). */
+  newConnectionOpen: boolean
+  setNewConnectionOpen: (open: boolean) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -88,6 +92,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   selected: [],
   tabs: [],
   activeTab: null,
+  newConnectionOpen: false,
 
   setTargetAddress: (address) => set({ targetAddress: address }),
 
@@ -122,7 +127,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       credentials
     })
     const tabs = tabsForProtocols(selected)
-    set({ page: 'session', tabs, activeTab: tabs[0]?.key ?? null })
+    set({ page: 'session', tabs, activeTab: tabs[0]?.key ?? null, newConnectionOpen: false })
   },
 
   beginSavedSession: (saved, credentials) => {
@@ -131,7 +136,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     useSessionStore.getState().setContext({
       target: saved.host,
       protocols,
-      credentials
+      credentials,
+      ...(saved.id ? { savedId: saved.id } : {})
     })
     const tabs = tabsForProtocols(protocols)
     set({
@@ -139,7 +145,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       tabs,
       activeTab: tabs[0]?.key ?? null,
       targetAddress: saved.host,
-      selected: protocols
+      selected: protocols,
+      newConnectionOpen: false
     })
   },
 
@@ -152,7 +159,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         // Closing the last tab ends the session and returns to the scan page.
         useSessionStore.getState().clearContext()
         resetPanelStores()
-        return { tabs, activeTab: null, page: 'scan' as Page }
+        return { tabs, activeTab: null, page: 'scan' as Page, newConnectionOpen: false }
       }
       const activeTab =
         state.activeTab === key ? tabs[tabs.length - 1].key : state.activeTab
@@ -162,6 +169,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   disconnect: () => {
     useSessionStore.getState().clearContext()
     resetPanelStores()
-    set({ page: 'scan', tabs: [], activeTab: null, selected: [] })
-  }
+    set({ page: 'scan', tabs: [], activeTab: null, selected: [], newConnectionOpen: false })
+  },
+
+  setNewConnectionOpen: (open) => set({ newConnectionOpen: open })
 }))

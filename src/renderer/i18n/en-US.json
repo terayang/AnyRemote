@@ -17,11 +17,20 @@
     "unsupportedTooltip": "Not supported yet, planned",
     "selectedCount": "{{count}} selected",
     "connect": "Connect",
-    "shortcutHint": "⌘K to focus input"
+    "shortcutHint": "⌘K to focus input",
+    "savedMatch": "This address is saved as \"{{name}}\" ({{username}}@{{host}})",
+    "savedMatchMulti": "This address has {{count}} saved identities",
+    "directConnect": "Connect Directly",
+    "rescan": "Rescan",
+    "rescanTooltip": "Rescan when the target's protocols may have changed"
   },
   "session": {
     "saved": "Saved Connections",
     "current": "Current",
+    "newConnection": "+ New Connection",
+    "disconnect": "Disconnect",
+    "disconnectConfirm": "Disconnect from {{target}}?",
+    "switchNewConfirm": "Connecting to a new target will end the current session with {{target}}",
     "tabs": {
       "desktop": "Remote Desktop",
       "terminal": "Terminal",
@@ -35,7 +44,9 @@
     "cancel": "Cancel",
     "saveFailed": "Failed to save connection",
     "loadFailed": "Failed to load saved connection",
-    "deleteFailed": "Failed to delete"
+    "deleteFailed": "Failed to delete",
+    "doubleClickHint": "Double-click to connect directly",
+    "noMatch": "No saved connections match the input"
   },
   "credentials": {
     "title": "Connection Credentials",
@@ -48,6 +59,8 @@
     "passphrase": "Key passphrase",
     "passphrasePlaceholder": "Passphrase protecting the key (if any)",
     "saveThis": "Save this connection and credentials",
+    "updateThis": "Update the saved connection and credentials",
+    "reenter": "Re-enter credentials",
     "saveNamePlaceholder": "Connection name (defaults to the target)",
     "submit": "Connect",
     "cancel": "Cancel"

@@ -1,5 +1,5 @@
 import { DeleteOutlined, SearchOutlined } from '@ant-design/icons'
-import { Button, Input, Popconfirm, Space, Spin, Tag, Typography, message } from 'antd'
+import { Alert, Button, Input, Popconfirm, Radio, Space, Spin, Tag, Tooltip, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ipcErrorMessage } from '../../shared/ipc'
@@ -38,6 +38,27 @@ export default function ScanPage() {
     void refreshSaved()
   }, [refreshSaved])
 
+  // B1: exact saved-address match (trim + lowercase) driving the quick-connect
+  // banner; skipped until the saved list has loaded to avoid a first-paint
+  // flicker, and empty input never matches.
+  const normalizedInput = targetAddress.trim().toLowerCase()
+  const matches =
+    savedLoaded && normalizedInput !== ''
+      ? savedConnections.filter((c) => c.host.trim().toLowerCase() === normalizedInput)
+      : []
+  // B3: several identities for one host — the user picks one (first by default).
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null)
+  const activeMatch = matches.find((m) => m.id === selectedMatchId) ?? matches[0]
+
+  // B5: the saved list filters live by input substring (name / host /
+  // username, case-insensitive); empty input restores the full list.
+  const filteredSaved =
+    normalizedInput === ''
+      ? savedConnections
+      : savedConnections.filter((c) =>
+          [c.name, c.host, c.username].some((v) => v.toLowerCase().includes(normalizedInput))
+        )
+
   // Elapsed-time ticker shown next to the spinner while a scan runs.
   const [elapsedMs, setElapsedMs] = useState(0)
   useEffect(() => {
@@ -66,7 +87,7 @@ export default function ScanPage() {
         return
       }
       beginSavedSession(
-        { host: conn.host, protocols: conn.protocols },
+        { id: conn.id, host: conn.host, protocols: conn.protocols },
         savedToCredentials(conn)
       )
     } catch (err) {
@@ -102,7 +123,12 @@ export default function ScanPage() {
             value={targetAddress}
             disabled={scanning}
             onChange={(e) => setTargetAddress(e.target.value)}
-            onPressEnter={() => void startScan()}
+            onPressEnter={() => {
+              // B6: Enter connects directly when the input exactly matches a
+              // saved entry; otherwise it starts a scan (unchanged behavior).
+              if (activeMatch) void connectSaved(activeMatch.id)
+              else void startScan()
+            }}
           />
           <Button
             type="primary"
@@ -114,6 +140,58 @@ export default function ScanPage() {
             {t('scan.start')}
           </Button>
         </Space.Compact>
+        {matches.length > 0 && activeMatch && (
+          <div id="quick-connect-banner" style={{ width: 420 }}>
+            <Alert
+              type="info"
+              showIcon
+              message={
+                <Space direction="vertical" size={6} style={{ width: '100%' }}>
+                  <Text style={{ fontSize: 13 }}>
+                    {matches.length === 1
+                      ? t('scan.savedMatch', {
+                          name: activeMatch.name,
+                          username: activeMatch.username,
+                          host: activeMatch.host
+                        })
+                      : t('scan.savedMatchMulti', { count: matches.length })}
+                  </Text>
+                  {matches.length > 1 && (
+                    <Radio.Group
+                      size="small"
+                      value={activeMatch.id}
+                      onChange={(e) => setSelectedMatchId(e.target.value as string)}
+                    >
+                      <Space direction="vertical" size={2}>
+                        {matches.map((m) => (
+                          <Radio key={m.id} value={m.id}>
+                            <Text style={{ fontSize: 12 }}>
+                              {m.name}（{m.username}）
+                            </Text>
+                          </Radio>
+                        ))}
+                      </Space>
+                    </Radio.Group>
+                  )}
+                  <Space size={8}>
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => void connectSaved(activeMatch.id)}
+                    >
+                      {t('scan.directConnect')}
+                    </Button>
+                    <Tooltip title={t('scan.rescanTooltip')}>
+                      <Button size="small" type="link" onClick={() => void startScan()}>
+                        {t('scan.rescan')}
+                      </Button>
+                    </Tooltip>
+                  </Space>
+                </Space>
+              }
+            />
+          </div>
+        )}
         <Text type="secondary" style={{ fontSize: 12 }}>
           {t('scan.shortcutHint')}
         </Text>
@@ -136,13 +214,17 @@ export default function ScanPage() {
           <Text type="secondary" style={{ fontSize: 12 }}>
             {t('saved.empty')}
           </Text>
+        ) : savedLoaded && filteredSaved.length === 0 ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {t('saved.noMatch')}
+          </Text>
         ) : (
           <div className="saved-conn-list">
-            {savedConnections.map((conn) => (
+            {filteredSaved.map((conn) => (
               <div
                 key={conn.id}
                 className="saved-conn-item"
-                title={conn.host}
+                title={`${conn.host} · ${t('saved.doubleClickHint')}`}
                 onClick={() => setTargetAddress(conn.host)}
                 onDoubleClick={() => void connectSaved(conn.id)}
               >
@@ -238,9 +320,12 @@ export default function ScanPage() {
             return
           }
           // Save first (failures toast but never block connecting), then go.
+          // B7: saveRequest.existingId updates the same-host+username entry
+          // instead of creating a duplicate.
           void (async () => {
             try {
               await saveConnection({
+                ...(saveRequest.existingId ? { id: saveRequest.existingId } : {}),
                 name: saveRequest.name,
                 host: targetAddress.trim(),
                 protocols: [...selected],

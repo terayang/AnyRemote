@@ -161,7 +161,10 @@ export const useVncStore = create<VncState>((set) => ({
   errorKind: null,
   desktopName: '',
   scaleMode: 'fit',
-  cursorMode: 'remote',
+  // Default to the local OS cursor: macOS Screen Sharing never sends RFB
+  // cursor shapes (noVNC #1430), so a noVNC-managed cursor is either
+  // invisible or falls back to the dot — the local cursor is always correct.
+  cursorMode: 'local',
   setScaleMode: (mode) => {
     set({ scaleMode: mode })
     // Apply live when a session is up; attachVnc reads the store at creation.
@@ -220,8 +223,6 @@ export async function attachVnc(
   const rfb = new RFB(container, ws)
   session.rfb = rfb
   rfb.scaleViewport = useVncStore.getState().scaleMode === 'fit'
-  // Fallback dot cursor when the server never sends a cursor shape.
-  rfb.showDotCursor = true
 
   rfb.addEventListener('connect', () => {
     if (ownsSlot()) useVncStore.setState({ status: 'connected' })

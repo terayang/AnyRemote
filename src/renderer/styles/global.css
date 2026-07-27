@@ -152,6 +152,25 @@ body {
   padding-top: 8px;
 }
 
+/* Sider column layout: header + new-connection button on top, saved list
+   scrolls in the middle, disconnect button pinned to the bottom. */
+.session-sider .ant-layout-sider-children {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.session-sider-newconn {
+  flex: none;
+  padding: 0 8px 10px;
+}
+
+.session-sider-footer {
+  flex: none;
+  padding: 8px;
+  border-top: 1px solid #2c2c2c;
+}
+
 .session-sider-header {
   display: flex;
   align-items: center;
@@ -164,6 +183,9 @@ body {
   flex-direction: column;
   gap: 4px;
   padding: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .saved-item {
@@ -187,6 +209,17 @@ body {
 
 .saved-item-active:hover {
   background: #1c2b45;
+}
+
+/* Saved-connections list inside the new-connection modal: same row style as
+   the sider, height-capped with its own scroll. */
+.newconn-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 184px;
+  overflow-y: auto;
+  margin-top: 4px;
 }
 
 /* Session tabs stretch to fill the workspace height. */

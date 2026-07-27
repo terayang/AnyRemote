@@ -21,6 +21,12 @@ export interface SessionContext {
   /** Protocol ids the user checked on the scan page. */
   protocols: string[]
   credentials: SessionCredentials
+  /**
+   * Id of the saved connection this session started from (beginSavedSession
+   * only); lets the sider filter the current entry by identity instead of by
+   * host, so same-host siblings stay visible.
+   */
+  savedId?: string
 }
 
 interface SessionState {

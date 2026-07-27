@@ -17,11 +17,20 @@
     "unsupportedTooltip": "暂不支持，规划中",
     "selectedCount": "已选 {{count}} 项",
     "connect": "连接",
-    "shortcutHint": "⌘K 聚焦输入框"
+    "shortcutHint": "⌘K 聚焦输入框",
+    "savedMatch": "该地址已保存为「{{name}}」（{{username}}@{{host}}）",
+    "savedMatchMulti": "该地址有 {{count}} 个已保存身份",
+    "directConnect": "直接连接",
+    "rescan": "重新扫描",
+    "rescanTooltip": "目标协议可能有变化时重新探测"
   },
   "session": {
     "saved": "已保存连接",
     "current": "当前",
+    "newConnection": "+ 新建连接",
+    "disconnect": "断开连接",
+    "disconnectConfirm": "断开与 {{target}} 的连接？",
+    "switchNewConfirm": "连接新目标将断开与 {{target}} 的当前会话",
     "tabs": {
       "desktop": "远程桌面",
       "terminal": "终端",
@@ -35,7 +44,9 @@
     "cancel": "取消",
     "saveFailed": "保存连接失败",
     "loadFailed": "读取已保存连接失败",
-    "deleteFailed": "删除失败"
+    "deleteFailed": "删除失败",
+    "doubleClickHint": "双击直接连接",
+    "noMatch": "没有匹配的已保存连接"
   },
   "credentials": {
     "title": "连接凭据",
@@ -48,6 +59,8 @@
     "passphrase": "私钥口令",
     "passphrasePlaceholder": "私钥加密口令（如有）",
     "saveThis": "保存此连接与凭据",
+    "updateThis": "更新已保存的连接与凭据",
+    "reenter": "重新输入凭据",
     "saveNamePlaceholder": "连接名称（默认为目标地址）",
     "submit": "连接",
     "cancel": "取消"
