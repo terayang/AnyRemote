@@ -12,7 +12,7 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
 - Git：origin = `git@github.com:terayang/AnyRemote.git`；仓库本地提交身份 Silica Yang \<silicayang@gmail.com\>（repo-local，未动全局配置）；push 认证走项目专用 SSH key（`~/.ssh/id_ed25519_anyremote`，经 repo-local `core.sshCommand` 配置，不影响其他项目；对应 GitHub 账号 silicayang，需对仓库有写权限）。
 - 本机服务：SSH(22) 开放；Screen Sharing(5900) 开放，RFB 003.889，仅提供 Apple 专有认证（security type 30/33/35/36）。
 - 系统防火墙关闭。
-- 目标平台：macOS（开发与自验）+ Windows（用户 UAT；Windows 包由 CI windows runner 构建，不在本机交叉构建）。
+- 目标平台：macOS（开发与自验）+ Windows（用户 UAT；Windows 包可经 `npm run dist:win` 在本机交叉构建，CI windows runner 亦构建）。
 
 ## 目录约定
 
