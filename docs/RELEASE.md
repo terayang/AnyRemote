@@ -15,7 +15,7 @@
 | Windows (x64) | `AnyRemote-<version>-win-x64.exe`（NSIS 安装包） | CI windows runner（`npm run dist:win`） |
 | Windows (x64) | `AnyRemote-<version>-win-portable-x64.exe`（免安装便携版） | CI windows runner（`npm run dist:win`） |
 
-CI 每次构建（push 到 main 或 PR）都会把上述产物上传为 Actions artifacts：`anyremote-macos-arm64`、`anyremote-macos-x64` 与 `anyremote-windows`（NSIS 安装包 + 便携版 exe），在对应 workflow run 页面底部下载。
+CI 每次构建（push 到 main 或 PR）都会把上述产物上传为 Actions artifacts：`anyremote-macos-arm64`、`anyremote-macos-x64`、`anyremote-windows-installer`（NSIS 安装包）与 `anyremote-windows-portable`（便携版 exe），在对应 workflow run 页面底部下载。
 
 ### 本地打包
 
@@ -67,7 +67,7 @@ macOS 本地快速验证单架构包：`npm run build && npx electron-builder --
 | Windows (x64) | `AnyRemote-<version>-win-x64.exe` (NSIS installer) | CI windows runner (`npm run dist:win`) |
 | Windows (x64) | `AnyRemote-<version>-win-portable-x64.exe` (no-install portable) | CI windows runner (`npm run dist:win`) |
 
-Every CI build (push to main or PR) uploads these as Actions artifacts: `anyremote-macos-arm64`, `anyremote-macos-x64` and `anyremote-windows` (NSIS installer + portable exe). Download them at the bottom of the workflow run page.
+Every CI build (push to main or PR) uploads these as Actions artifacts: `anyremote-macos-arm64`, `anyremote-macos-x64`, `anyremote-windows-installer` (NSIS installer) and `anyremote-windows-portable` (portable exe). Download them at the bottom of the workflow run page.
 
 ### Local packaging
 
