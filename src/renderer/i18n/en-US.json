@@ -71,6 +71,7 @@
     "zoomActual": "Actual size",
     "cursorRemote": "Remote cursor",
     "cursorLocal": "Local cursor",
+    "cursorModeHint": "Remote: show cursor shapes sent by the server (unreliable on macOS); Local: always show this device's system cursor",
     "disconnect": "Disconnect"
   },
   "terminal": {

@@ -71,6 +71,7 @@
     "zoomActual": "原始尺寸",
     "cursorRemote": "远程光标",
     "cursorLocal": "本地光标",
+    "cursorModeHint": "远程光标：显示服务器下发的光标形状（macOS 下发不稳定，可能不可见）；本地光标：始终显示本机系统光标",
     "disconnect": "断开"
   },
   "terminal": {

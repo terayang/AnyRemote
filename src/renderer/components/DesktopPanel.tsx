@@ -1,5 +1,5 @@
 import { DisconnectOutlined, ReloadOutlined, WarningOutlined } from '@ant-design/icons'
-import { Button, Select, Space, Spin, Typography } from 'antd'
+import { Button, Segmented, Select, Space, Spin, Tooltip, Typography } from 'antd'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSessionStore } from '../store/session'
@@ -68,16 +68,17 @@ export default function DesktopPanel() {
               { value: 'actual', label: t('desktop.zoomActual') }
             ]}
           />
-          <Select
-            size="small"
-            value={cursorMode}
-            style={{ width: 110 }}
-            onChange={setCursorMode}
-            options={[
-              { value: 'remote', label: t('desktop.cursorRemote') },
-              { value: 'local', label: t('desktop.cursorLocal') }
-            ]}
-          />
+          <Tooltip title={t('desktop.cursorModeHint')} placement="bottom">
+            <Segmented
+              size="small"
+              value={cursorMode}
+              onChange={(value) => setCursorMode(value as 'remote' | 'local')}
+              options={[
+                { value: 'remote', label: t('desktop.cursorRemote') },
+                { value: 'local', label: t('desktop.cursorLocal') }
+              ]}
+            />
+          </Tooltip>
           {desktopName !== '' && (
             <Text className="mono" type="secondary" style={{ fontSize: 12 }}>
               {desktopName}
