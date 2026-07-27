@@ -61,10 +61,12 @@ try {
   await page.locator('#connect-submit').click()
 
   // Switch to the file manager tab (mounting the panel triggers its own SSH
-  // connect, which must fail with AUTH_FAILED).
+  // connect, which must fail with AUTH_FAILED). The terminal tab shows the
+  // same Chinese error text, so the assertion is scoped to .files-error.
   await page.getByRole('tab', { name: '文件管理' }).click()
-  await page.locator('.files-error').waitFor()
-  await page.getByText('认证失败，请检查用户名或密码').waitFor()
+  const errorBox = page.locator('.files-error')
+  await errorBox.waitFor()
+  await errorBox.getByText('认证失败，请检查用户名或密码').waitFor()
 
   const file = path.join(shotsDir, 'wip-files.png')
   await page.screenshot({ path: file })

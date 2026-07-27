@@ -21,6 +21,7 @@
  */
 
 import { create } from 'zustand'
+import { ipcErrorCode } from '../../shared/ipc'
 import type { VncBridgeHandle, VncStartBridgeParams } from '../../shared/ipc'
 import { VNC_BRIDGE_CLOSE_CODES } from '../../shared/vnc'
 
@@ -83,7 +84,7 @@ let lastAttach: { container: HTMLElement; params: VncStartBridgeParams } | null 
 
 /** Maps an IPC invoke failure (startBridge) onto a VncErrorKind. */
 function classifyIpcError(err: unknown): VncErrorKind {
-  switch ((err as { code?: unknown } | null | undefined)?.code) {
+  switch (ipcErrorCode(err)) {
     case 'AUTH_FAILED':
       return 'auth'
     case 'UNREACHABLE':

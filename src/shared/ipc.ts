@@ -144,3 +144,21 @@ export function rebuildIpcError(err: unknown): unknown {
   }
   return err
 }
+
+/**
+ * Renderer side: recovers the error code embedded in the message by the
+ * preload invoke wrapper as `[CODE] message`. contextBridge clones a thrown
+ * Error keeping only `message`, so IpcInvokeError.code never reaches the
+ * renderer (see src/preload/index.ts).
+ */
+export function ipcErrorCode(err: unknown): string | undefined {
+  const message = err instanceof Error ? err.message : String(err)
+  const match = /^\[([A-Z_]+)\] /.exec(message)
+  return match?.[1]
+}
+
+/** Renderer side: err.message with the embedded `[CODE] ` prefix stripped. */
+export function ipcErrorMessage(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err)
+  return message.replace(/^\[[A-Z_]+\] /, '')
+}

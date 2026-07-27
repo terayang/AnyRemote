@@ -35,6 +35,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FileEntry } from '../../shared/ssh'
+import { ipcErrorCode, ipcErrorMessage } from '../../shared/ipc'
 import { useSessionStore } from '../store/session'
 import { useFilesStore } from '../store/files'
 import './files.css'
@@ -128,16 +129,17 @@ function formatTime(ms: number): string {
 }
 
 function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
+  return ipcErrorMessage(err)
 }
 
 /**
- * Infers the SshErrorCode from the message prefixes mapConnectError
- * (src/main/ssh/sshService.ts) stamps on connect failures. Used only because
- * thrown errors cross the contextBridge boundary as plain Errors — custom
- * fields like `code` do not survive into the renderer's main world.
+ * Recovers the SshErrorCode from an IPC failure: the preload embeds it as a
+ * `[CODE] message` prefix (see ipcErrorCode); the sshService.mapConnectError
+ * message prefixes are kept as a fallback for errors that never got a code.
  */
 function codeFromMessage(err: unknown): string | undefined {
+  const embedded = ipcErrorCode(err)
+  if (embedded !== undefined) return embedded
   const msg = errorMessage(err)
   if (msg.startsWith('Authentication failed')) return 'AUTH_FAILED'
   if (msg.startsWith('Connection timed out')) return 'TIMEOUT'

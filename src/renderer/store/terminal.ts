@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { ipcErrorCode, ipcErrorMessage } from '../../shared/ipc'
 
 /** Lifecycle of the terminal panel's SSH shell session. */
 export type TerminalStatus =
@@ -35,11 +36,11 @@ const MESSAGE_CODE_PREFIXES: ReadonlyArray<readonly [string, string]> = [
   ['Connection closed before the session was ready', 'UNREACHABLE']
 ]
 
-/** Reduces any thrown value (IpcInvokeError or plain Error) to a TerminalError. */
+/** Reduces any thrown value to a TerminalError, code recovered via the embedded prefix. */
 export function toTerminalError(err: unknown): TerminalError {
-  const code = (err as { code?: unknown } | null | undefined)?.code
-  const message = err instanceof Error ? err.message : String(err)
-  if (typeof code === 'string') return { code, message }
+  const code = ipcErrorCode(err)
+  const message = ipcErrorMessage(err)
+  if (code !== undefined) return { code, message }
   const hit = MESSAGE_CODE_PREFIXES.find(([prefix]) => message.startsWith(prefix))
   return hit ? { code: hit[1], message } : { message }
 }

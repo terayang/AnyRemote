@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import {
   IPC_CHANNELS,
+  IpcInvokeError,
   rebuildIpcError,
   sftpProgressChannel,
   sshCloseChannel,
@@ -63,13 +64,24 @@ export interface AnyRemoteApi {
 
 /**
  * invoke wrapper: rebuilds the IpcError the handler threw (Electron re-wraps
- * handler errors, dropping the code; see src/shared/ipc.ts).
+ * handler errors, dropping the code; see src/shared/ipc.ts). contextBridge
+ * then clones the thrown Error keeping only `message` (custom fields like
+ * IpcInvokeError.code are dropped), so the code is embedded into the message
+ * as `[CODE] message`; the renderer recovers it with ipcErrorCode().
  */
 async function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
   try {
     return (await ipcRenderer.invoke(channel, ...args)) as T
   } catch (err) {
-    throw rebuildIpcError(err)
+    const ipcError = rebuildIpcError(err)
+    if (
+      ipcError instanceof IpcInvokeError &&
+      ipcError.code !== undefined &&
+      !ipcError.message.startsWith(`[${ipcError.code}]`)
+    ) {
+      ipcError.message = `[${ipcError.code}] ${ipcError.message}`
+    }
+    throw ipcError
   }
 }
 
