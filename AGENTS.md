@@ -17,7 +17,7 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
 ## 目录约定
 
 - `src/main/` Electron 主进程（网络与协议层）；`src/preload/`；`src/renderer/` React UI；`src/shared/` 主/渲染共享类型与常量。
-- `tests/` 测试；`docs/` 文档；`_ref/` 第三方参考源码（仅供阅读，不入库，不修改）。
+- `tests/` 测试；`docs/` 文档；`build/` 应用图标（icon.png / icon.icns，electron-builder 使用）；`_ref/` 第三方参考源码（仅供阅读，不入库，不修改）。
 
 ## 工作流约定
 
@@ -43,5 +43,6 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
   - 安装：`npm install`
   - 开发：`npm run dev`（electron-vite dev，HMR）
   - 测试：`npm test`（vitest 单测）；类型检查 `npm run typecheck`
-  - 打包：`npm run build`（electron-vite build → `out/`；安装包 electron-builder 后续阶段接入）
+  - 打包：`npm run build`（electron-vite build → `out/`）
+  - 安装包：`npm run dist`（本机 macOS dmg，arm64 + x64）/ `npm run dist:win`（Windows NSIS，须在 Windows 上运行）/ `npm run dist:all`；electron-builder，配置在 electron-builder.yml，产物 → `dist/`，publish 关闭只产安装包；详见 docs/RELEASE.md
   - 冒烟：`npm run smoke`（需先 `npm run build`；Playwright Electron 驱动真实应用，依次为 scripts/smoke-scan / smoke-terminal / smoke-files / smoke-vnc / smoke-saved 五个 .mjs，也可单独运行）

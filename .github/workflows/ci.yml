@@ -27,3 +27,29 @@ jobs:
       - run: npm test
 
       - run: npm run build
+
+      # Packaging: unsigned installers (no certs in CI), artifacts only —
+      # electron-builder publish is disabled (`publish: null` + --publish never).
+      - name: Package macOS dmg (arm64 + x64)
+        if: matrix.os == 'macos-latest'
+        run: npm run dist
+
+      - name: Package Windows NSIS installer (x64)
+        if: matrix.os == 'windows-latest'
+        run: npm run dist:win
+
+      - name: Upload macOS artifact
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: anyremote-macos
+          path: dist/*.dmg
+          if-no-files-found: error
+
+      - name: Upload Windows artifact
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: anyremote-windows
+          path: dist/*.exe
+          if-no-files-found: error
