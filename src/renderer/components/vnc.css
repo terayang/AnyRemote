@@ -26,3 +26,16 @@
   gap: 12px;
   background: rgba(10, 10, 10, 0.86);
 }
+
+/* Local-cursor mode (workaround for remote-cursor glitches): keep the OS
+   cursor visible over the canvas (noVNC hides it via inline `cursor: none`
+   once the server sends cursor shapes) and suppress noVNC's own cursor
+   overlay, so exactly one cursor — the local one — is shown. */
+.vnc-container.local-cursor,
+.vnc-container.local-cursor * {
+  cursor: default !important;
+}
+
+.vnc-container.local-cursor .noVNC_cursor {
+  display: none !important;
+}

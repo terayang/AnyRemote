@@ -38,12 +38,20 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: npm run dist:win
 
-      - name: Upload macOS artifact
+      - name: Upload macOS arm64 artifact
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: anyremote-macos
-          path: dist/*.dmg
+          name: anyremote-macos-arm64
+          path: dist/*arm64.dmg
+          if-no-files-found: error
+
+      - name: Upload macOS x64 artifact
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: anyremote-macos-x64
+          path: dist/*x64.dmg
           if-no-files-found: error
 
       - name: Upload Windows artifact

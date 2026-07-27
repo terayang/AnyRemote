@@ -25,6 +25,8 @@ export default function DesktopPanel() {
   const desktopName = useVncStore((s) => s.desktopName)
   const scaleMode = useVncStore((s) => s.scaleMode)
   const setScaleMode = useVncStore((s) => s.setScaleMode)
+  const cursorMode = useVncStore((s) => s.cursorMode)
+  const setCursorMode = useVncStore((s) => s.setCursorMode)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // The mount lifecycle owns the connection: exactly one attach per mount,
@@ -66,6 +68,16 @@ export default function DesktopPanel() {
               { value: 'actual', label: t('desktop.zoomActual') }
             ]}
           />
+          <Select
+            size="small"
+            value={cursorMode}
+            style={{ width: 110 }}
+            onChange={setCursorMode}
+            options={[
+              { value: 'remote', label: t('desktop.cursorRemote') },
+              { value: 'local', label: t('desktop.cursorLocal') }
+            ]}
+          />
           {desktopName !== '' && (
             <Text className="mono" type="secondary" style={{ fontSize: 12 }}>
               {desktopName}
@@ -77,7 +89,10 @@ export default function DesktopPanel() {
         </Button>
       </Space>
       <div className="desktop-viewport vnc-viewport">
-        <div ref={containerRef} className="vnc-container" />
+        <div
+          ref={containerRef}
+          className={cursorMode === 'local' ? 'vnc-container local-cursor' : 'vnc-container'}
+        />
         {context === null && (
           <div className="vnc-overlay">
             <Text type="secondary">

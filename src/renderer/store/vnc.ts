@@ -39,6 +39,8 @@ import RFBUntyped from '@novnc/novnc'
 type RfbInstance = EventTarget & {
   /** Scales the remote framebuffer to fit the local viewport. */
   scaleViewport: boolean
+  /** Shows a small dot cursor when the server sends no cursor shape. */
+  showDotCursor: boolean
   /** Drops keyboard/mouse input instead of forwarding it when true. */
   viewOnly: boolean
   /** Starts a clean disconnection; a 'disconnect' event follows. */
@@ -139,6 +141,9 @@ function teardown(session: LiveSession, opts: { disconnectRfb: boolean }): void 
   }
 }
 
+/** Cursor display modes: remote = noVNC-managed cursor overlay; local = always show the OS cursor. */
+export type VncCursorMode = 'remote' | 'local'
+
 interface VncState {
   status: VncStatus
   /** Classified failure while status === 'error'; null otherwise. */
@@ -146,7 +151,9 @@ interface VncState {
   /** Server-reported desktop name (RFB ServerInit); empty until known. */
   desktopName: string
   scaleMode: VncScaleMode
+  cursorMode: VncCursorMode
   setScaleMode: (mode: VncScaleMode) => void
+  setCursorMode: (mode: VncCursorMode) => void
 }
 
 export const useVncStore = create<VncState>((set) => ({
@@ -154,11 +161,13 @@ export const useVncStore = create<VncState>((set) => ({
   errorKind: null,
   desktopName: '',
   scaleMode: 'fit',
+  cursorMode: 'remote',
   setScaleMode: (mode) => {
     set({ scaleMode: mode })
     // Apply live when a session is up; attachVnc reads the store at creation.
     if (live?.rfb) live.rfb.scaleViewport = mode === 'fit'
-  }
+  },
+  setCursorMode: (mode) => set({ cursorMode: mode })
 }))
 
 /**
@@ -211,6 +220,8 @@ export async function attachVnc(
   const rfb = new RFB(container, ws)
   session.rfb = rfb
   rfb.scaleViewport = useVncStore.getState().scaleMode === 'fit'
+  // Fallback dot cursor when the server never sends a cursor shape.
+  rfb.showDotCursor = true
 
   rfb.addEventListener('connect', () => {
     if (ownsSlot()) useVncStore.setState({ status: 'connected' })

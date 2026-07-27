@@ -37,6 +37,13 @@ win:
   target:
     - target: nsis
       arch: [x64]
+    # Green/portable build: a single self-extracting exe that runs without
+    # installation (settings still live in the per-user app-data dir).
+    - target: portable
+      arch: [x64]
+
+portable:
+  artifactName: ${productName}-${version}-win-portable-${arch}.${ext}
 
 nsis:
   # Per-user install (no admin rights), classic wizard with directory choice.

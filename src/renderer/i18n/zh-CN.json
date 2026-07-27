@@ -56,6 +56,8 @@
     "placeholder": "远程桌面占位 · {{resolution}}",
     "zoomFit": "适应窗口",
     "zoomActual": "原始尺寸",
+    "cursorRemote": "远程光标",
+    "cursorLocal": "本地光标",
     "disconnect": "断开"
   },
   "terminal": {
