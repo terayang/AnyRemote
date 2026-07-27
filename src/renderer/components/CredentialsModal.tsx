@@ -1,4 +1,5 @@
-import { Collapse, Form, Input, Modal, Typography } from 'antd'
+import { Checkbox, Collapse, Form, Input, Modal, Typography } from 'antd'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionCredentials } from '../store/session'
 
@@ -11,18 +12,28 @@ interface CredentialsFormValues {
   passphrase?: string
 }
 
+/** Save intent collected alongside the credentials (F5). */
+export interface SaveConnectionRequest {
+  name: string
+}
+
 interface CredentialsModalProps {
   open: boolean
   /** Target host shown for context (mono, read-only). */
   target: string
   onCancel: () => void
-  onSubmit: (credentials: SessionCredentials) => void
+  /**
+   * saveRequest is present when the user checked "save this connection";
+   * persisting is the caller's job and must not block connecting.
+   */
+  onSubmit: (credentials: SessionCredentials, saveRequest?: SaveConnectionRequest) => void
 }
 
 /**
  * Pre-connect credential collection. The username/password input and submit
  * button ids (`cred-username` / `cred-password` / `connect-submit`) are a
- * cross-agent contract relied on by smoke tests — do not rename.
+ * cross-agent contract relied on by smoke tests — do not rename. The save
+ * checkbox/input ids (`cred-save-connection` / `cred-save-name`) are too.
  */
 export default function CredentialsModal({
   open,
@@ -32,15 +43,28 @@ export default function CredentialsModal({
 }: CredentialsModalProps) {
   const { t } = useTranslation()
   const [form] = Form.useForm<CredentialsFormValues>()
+  const [saveChecked, setSaveChecked] = useState(false)
+  const [saveName, setSaveName] = useState(target)
+
+  // Reset the save controls every time the modal opens for a (new) target.
+  useEffect(() => {
+    if (open) {
+      setSaveChecked(false)
+      setSaveName(target)
+    }
+  }, [open, target])
 
   const handleOk = async (): Promise<void> => {
     const values = await form.validateFields()
-    onSubmit({
-      username: values.username.trim(),
-      password: values.password || undefined,
-      privateKey: values.privateKey?.trim() || undefined,
-      passphrase: values.passphrase || undefined
-    })
+    onSubmit(
+      {
+        username: values.username.trim(),
+        password: values.password || undefined,
+        privateKey: values.privateKey?.trim() || undefined,
+        passphrase: values.passphrase || undefined
+      },
+      saveChecked ? { name: saveName.trim() || target } : undefined
+    )
   }
 
   return (
@@ -92,6 +116,24 @@ export default function CredentialsModal({
             }
           ]}
         />
+        <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
+          <Checkbox
+            id="cred-save-connection"
+            checked={saveChecked}
+            onChange={(e) => setSaveChecked(e.target.checked)}
+          >
+            {t('credentials.saveThis')}
+          </Checkbox>
+          <Input
+            id="cred-save-name"
+            style={{ marginTop: 8 }}
+            size="small"
+            disabled={!saveChecked}
+            placeholder={t('credentials.saveNamePlaceholder')}
+            value={saveName}
+            onChange={(e) => setSaveName(e.target.value)}
+          />
+        </Form.Item>
       </Form>
     </Modal>
   )

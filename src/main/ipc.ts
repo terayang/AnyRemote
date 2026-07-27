@@ -22,6 +22,9 @@ import {
   sshDataChannel,
   toTransportError,
   type IpcErrorCodeMapper,
+  type SavedConnection,
+  type SavedConnectionInput,
+  type SavedConnectionSummary,
   type VncBridgeHandle,
   type VncStartBridgeParams
 } from '../shared/ipc'
@@ -31,6 +34,7 @@ import * as localFs from './localFs'
 import { RfbAuthError, RfbConnectionError, RfbProtocolError, RfbTimeoutError } from './rfb/types'
 import * as sftpService from './ssh/sftpService'
 import * as sshService from './ssh/sshService'
+import * as store from './store'
 import { startVncBridge, type VncBridge } from './vncBridge'
 
 /**
@@ -155,6 +159,17 @@ export function registerIpcHandlers(): void {
   // --- Local filesystem (file manager left pane) ---
   handle(IPC_CHANNELS.localFsHomeDir, () => localFs.homeDir())
   handle(IPC_CHANNELS.localFsList, (_event, path: string) => localFs.list(path))
+
+  // --- Saved connections (safeStorage-encrypted secrets, src/main/store.ts) ---
+  handle(IPC_CHANNELS.connectionsList, (): Promise<SavedConnectionSummary[]> => store.list())
+  handle(IPC_CHANNELS.connectionsGet, (_event, id: string): Promise<SavedConnection | null> =>
+    store.get(id)
+  )
+  handle(
+    IPC_CHANNELS.connectionsSave,
+    (_event, input: SavedConnectionInput): Promise<SavedConnectionSummary> => store.save(input)
+  )
+  handle(IPC_CHANNELS.connectionsDelete, (_event, id: string) => store.remove(id))
 
   // --- Native file dialogs ---
   handle(IPC_CHANNELS.dialogPickFiles, async (event) => {

@@ -14,6 +14,13 @@ export interface SshAuthConfig {
   password?: string
   /** PEM/OpenSSH-encoded private key for publickey auth. */
   privateKey?: string
+  /**
+   * Path to a local private-key file; the main process reads its content and
+   * uses it as the private key when privateKey itself is absent. A leading
+   * `~/` expands to the user's home directory. An unreadable file fails the
+   * connect with an UNREACHABLE error naming the path.
+   */
+  privateKeyPath?: string
   /** Passphrase decrypting privateKey when the key is encrypted. */
   passphrase?: string
 }

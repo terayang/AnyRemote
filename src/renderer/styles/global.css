@@ -20,10 +20,31 @@ body {
     Consolas, monospace;
 }
 
+/* ---------- App shell (slim header with the language switch) ---------- */
+
+.app-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 6px 16px 4px;
+}
+
+.app-body {
+  flex: 1;
+  min-height: 0;
+}
+
 /* ---------- Scan page ---------- */
 
 .scan-page {
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -71,6 +92,56 @@ body {
   background: rgba(20, 20, 20, 0.92);
   border-top: 1px solid #2c2c2c;
   backdrop-filter: blur(6px);
+}
+
+/* ---------- Saved connections (scan page block) ---------- */
+
+.saved-connections {
+  width: 100%;
+  max-width: 640px;
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saved-conn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.saved-conn-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.saved-conn-item:hover {
+  background: #242424;
+  border-color: #2c2c2c;
+}
+
+.saved-conn-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* The delete icon appears only while hovering the entry. */
+.saved-conn-delete {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.saved-conn-item:hover .saved-conn-delete {
+  opacity: 1;
 }
 
 /* ---------- Session page ---------- */

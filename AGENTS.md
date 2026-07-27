@@ -44,3 +44,4 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
   - 开发：`npm run dev`（electron-vite dev，HMR）
   - 测试：`npm test`（vitest 单测）；类型检查 `npm run typecheck`
   - 打包：`npm run build`（electron-vite build → `out/`；安装包 electron-builder 后续阶段接入）
+  - 冒烟：`npm run smoke`（需先 `npm run build`；Playwright Electron 驱动真实应用，依次为 scripts/smoke-scan / smoke-terminal / smoke-files / smoke-vnc / smoke-saved 五个 .mjs，也可单独运行）

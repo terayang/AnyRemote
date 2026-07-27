@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 import type { ProtocolId } from '../../shared/protocols'
 import type { TargetScanReport } from '../../shared/scan'
+import { useFilesStore } from './files'
 import { useSessionStore, type SessionCredentials } from './session'
+import { useTerminalStore } from './terminal'
+import { detachVnc } from './vnc'
 
 export type Page = 'scan' | 'session'
 
@@ -25,6 +28,27 @@ function tabsForProtocols(protocols: readonly ProtocolId[]): SessionTab[] {
   return tabs
 }
 
+/** Protocols the MVP can actually open a session for (others are scan-only). */
+const SESSION_PROTOCOLS: readonly ProtocolId[] = ['ssh', 'vnc']
+
+function toSessionProtocols(protocols: readonly string[]): ProtocolId[] {
+  return protocols.filter((p): p is ProtocolId =>
+    (SESSION_PROTOCOLS as readonly string[]).includes(p)
+  )
+}
+
+/**
+ * Releases every panel's per-session resources (SSH sessions close via the
+ * panels' own unmount/context-change cleanups; the stores and the live VNC
+ * session are reset here so nothing from the previous target leaks into the
+ * next one).
+ */
+function resetPanelStores(): void {
+  useTerminalStore.getState().reset()
+  useFilesStore.getState().reset()
+  detachVnc()
+}
+
 interface AppState {
   page: Page
   targetAddress: string
@@ -41,6 +65,15 @@ interface AppState {
   toggleProtocol: (id: ProtocolId) => void
   /** Stores the session context and switches to the session workspace. */
   beginSession: (credentials: SessionCredentials) => void
+  /**
+   * Starts a session straight from a saved connection (scan page double-click
+   * or session-sider click): drops the current session's resources, then
+   * opens the saved target's tabs with its decrypted credentials.
+   */
+  beginSavedSession: (
+    saved: { host: string; protocols: string[] },
+    credentials: SessionCredentials
+  ) => void
   setActiveTab: (key: TabKind) => void
   closeTab: (key: TabKind) => void
   disconnect: () => void
@@ -82,6 +115,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   beginSession: (credentials) => {
     const { targetAddress, selected } = get()
+    resetPanelStores()
     useSessionStore.getState().setContext({
       target: targetAddress.trim(),
       protocols: [...selected],
@@ -89,6 +123,24 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
     const tabs = tabsForProtocols(selected)
     set({ page: 'session', tabs, activeTab: tabs[0]?.key ?? null })
+  },
+
+  beginSavedSession: (saved, credentials) => {
+    const protocols = toSessionProtocols(saved.protocols)
+    resetPanelStores()
+    useSessionStore.getState().setContext({
+      target: saved.host,
+      protocols,
+      credentials
+    })
+    const tabs = tabsForProtocols(protocols)
+    set({
+      page: 'session',
+      tabs,
+      activeTab: tabs[0]?.key ?? null,
+      targetAddress: saved.host,
+      selected: protocols
+    })
   },
 
   setActiveTab: (key) => set({ activeTab: key }),
@@ -99,6 +151,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (tabs.length === 0) {
         // Closing the last tab ends the session and returns to the scan page.
         useSessionStore.getState().clearContext()
+        resetPanelStores()
         return { tabs, activeTab: null, page: 'scan' as Page }
       }
       const activeTab =
@@ -108,6 +161,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   disconnect: () => {
     useSessionStore.getState().clearContext()
+    resetPanelStores()
     set({ page: 'scan', tabs: [], activeTab: null, selected: [] })
   }
 }))

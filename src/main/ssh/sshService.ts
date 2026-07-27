@@ -12,6 +12,9 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import { Client, type ClientChannel, type ConnectConfig } from 'ssh2'
 import {
   SshError,
@@ -57,6 +60,40 @@ function requireRecord(sessionId: string): SessionRecord {
     throw new SshError('SESSION_NOT_FOUND', `Unknown or closed session: ${sessionId}`)
   }
   return record
+}
+
+/**
+ * Resolves the private key to authenticate with, returning PEM/OpenSSH key
+ * content or undefined.
+ *
+ * Resolution order:
+ * 1. config.privateKey holding actual key content (contains a BEGIN header)
+ *    is used as-is.
+ * 2. config.privateKey without a BEGIN header is a key FILE PATH — the
+ *    renderer's credential flow (SessionCredentials.privateKey, documented
+ *    as a path) forwards paths through this field, and the panel components
+ *    passing them predate the explicit privateKeyPath field.
+ * 3. config.privateKeyPath is read from disk (a leading `~/` expands to the
+ *    user's home directory).
+ *
+ * An unreadable key file throws an UNREACHABLE SshError naming the path.
+ */
+export function resolvePrivateKey(config: SshAuthConfig): string | undefined {
+  let path = config.privateKeyPath
+  if (config.privateKey !== undefined) {
+    if (config.privateKey.includes('-----BEGIN')) return config.privateKey
+    path = config.privateKey
+  }
+  if (path === undefined) return undefined
+  const expanded = path === '~' ? homedir() : path.startsWith('~/') ? join(homedir(), path.slice(2)) : path
+  try {
+    return readFileSync(expanded, 'utf8')
+  } catch (err) {
+    throw new SshError(
+      'UNREACHABLE',
+      `Private key file is not readable: ${path} (${(err as Error).message})`
+    )
+  }
 }
 
 /**
@@ -107,14 +144,23 @@ export function createSession(
       resolve(sessionId)
     })
 
+    let privateKey: string | undefined
+    try {
+      privateKey = resolvePrivateKey(config)
+    } catch (err) {
+      // The key file could not be read: fail before touching the network.
+      settleReject(err as SshError)
+      return
+    }
+
     const connectConfig: ConnectConfig = {
       host: config.host,
       port: config.port,
       username: config.username,
       readyTimeout: options?.readyTimeoutMs ?? DEFAULT_READY_TIMEOUT_MS
     }
-    if (config.privateKey) {
-      connectConfig.privateKey = config.privateKey
+    if (privateKey) {
+      connectConfig.privateKey = privateKey
       if (config.passphrase) connectConfig.passphrase = config.passphrase
     } else if (config.password !== undefined) {
       connectConfig.password = config.password

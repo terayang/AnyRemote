@@ -40,7 +40,11 @@ export const IPC_CHANNELS = {
   localFsHomeDir: 'localFs:homeDir',
   localFsList: 'localFs:list',
   dialogPickFiles: 'dialog:pickFiles',
-  dialogPickSavePath: 'dialog:pickSavePath'
+  dialogPickSavePath: 'dialog:pickSavePath',
+  connectionsList: 'connections:list',
+  connectionsGet: 'connections:get',
+  connectionsSave: 'connections:save',
+  connectionsDelete: 'connections:delete'
 } as const
 
 /** Streaming event channel carrying one SSH shell's output (string chunks). */
@@ -69,6 +73,48 @@ export interface VncBridgeHandle {
 /** SFTP upload/download progress event payload (TransferProgress + direction). */
 export interface SftpProgressEvent extends TransferProgress {
   direction: 'upload' | 'download'
+}
+
+/** What a saved connection's secret protects (F5, src/main/store.ts). */
+export type SavedSecretKind = 'password' | 'privateKeyPath'
+
+/**
+ * A saved connection's secret as it crosses IPC: connections.save accepts and
+ * connections.get returns the DECRYPTED plaintext in `data`. On disk it is
+ * always the base64 of safeStorage.encryptString(plaintext) — the plaintext
+ * form never leaves the two IPC endpoints.
+ */
+export interface SavedConnectionSecret {
+  kind: SavedSecretKind
+  data: string
+}
+
+/** One saved connection. `secret` is present only in connections.get results. */
+export interface SavedConnection {
+  id: string
+  name: string
+  host: string
+  /** Protocol ids (e.g. 'ssh', 'vnc') chosen when the connection was saved. */
+  protocols: string[]
+  username: string
+  secret?: SavedConnectionSecret
+}
+
+/** Saved connection without its secret, as returned by connections.list. */
+export type SavedConnectionSummary = Omit<SavedConnection, 'secret'>
+
+/**
+ * Payload of connections.save: a new connection (no id — the main process
+ * assigns a randomUUID) or an update (existing id). `secret.data` is
+ * plaintext here; the main process encrypts it before persisting.
+ */
+export interface SavedConnectionInput {
+  id?: string
+  name: string
+  host: string
+  protocols: string[]
+  username: string
+  secret?: SavedConnectionSecret
 }
 
 /** Serializable error shape crossing IPC; keeps the distinguishable cause. */

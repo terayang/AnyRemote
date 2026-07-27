@@ -1,4 +1,7 @@
 import net, { type AddressInfo } from 'node:net'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { utils } from 'ssh2'
 import {
@@ -65,6 +68,32 @@ describe('createSession', () => {
     )
     expect(typeof sessionId).toBe('string')
     closeSession(sessionId)
+  })
+
+  it('connects with a private key read from privateKeyPath', async () => {
+    const keyPair = utils.generateKeyPairSync('ed25519')
+    const keyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'anyremote-key-'))
+    const keyPath = path.join(keyDir, 'id_ed25519')
+    fs.writeFileSync(keyPath, keyPair.private, { mode: 0o600 })
+    try {
+      const sessionId = await createSession(
+        auth({ password: undefined, privateKeyPath: keyPath })
+      )
+      expect(typeof sessionId).toBe('string')
+      closeSession(sessionId)
+    } finally {
+      fs.rmSync(keyDir, { recursive: true, force: true })
+    }
+  })
+
+  it('maps an unreadable privateKeyPath to UNREACHABLE and names the path', async () => {
+    const keyPath = path.join(os.tmpdir(), `anyremote-no-such-key-${process.pid}`)
+    await expect(
+      createSession(auth({ password: undefined, privateKeyPath: keyPath }))
+    ).rejects.toMatchObject({ code: 'UNREACHABLE' })
+    await expect(
+      createSession(auth({ password: undefined, privateKeyPath: keyPath }))
+    ).rejects.toThrow(keyPath)
   })
 
   it('rejects a wrong password with a distinguishable AUTH_FAILED error', async () => {

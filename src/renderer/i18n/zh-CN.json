@@ -28,6 +28,15 @@
       "files": "文件管理"
     }
   },
+  "saved": {
+    "empty": "暂无已保存连接，连接时勾选「保存此连接与凭据」即可收藏",
+    "deleteConfirm": "删除这条已保存连接？",
+    "delete": "删除",
+    "cancel": "取消",
+    "saveFailed": "保存连接失败",
+    "loadFailed": "读取已保存连接失败",
+    "deleteFailed": "删除失败"
+  },
   "credentials": {
     "title": "连接凭据",
     "username": "用户名",
@@ -38,6 +47,8 @@
     "privateKeyPlaceholder": "如 ~/.ssh/id_ed25519",
     "passphrase": "私钥口令",
     "passphrasePlaceholder": "私钥加密口令（如有）",
+    "saveThis": "保存此连接与凭据",
+    "saveNamePlaceholder": "连接名称（默认为目标地址）",
     "submit": "连接",
     "cancel": "取消"
   },
@@ -47,6 +58,18 @@
     "zoomActual": "原始尺寸",
     "disconnect": "断开"
   },
+  "terminal": {
+    "noSession": "未建立会话",
+    "connecting": "正在连接…",
+    "retry": "重试",
+    "closed": "会话已断开",
+    "reconnect": "重新连接",
+    "error": {
+      "authFailed": "认证失败，请检查用户名或密码",
+      "unreachable": "无法连接到目标",
+      "timeout": "连接超时"
+    }
+  },
   "files": {
     "local": "本地",
     "remote": "远程",
@@ -54,9 +77,38 @@
     "download": "下载",
     "newFolder": "新建文件夹",
     "delete": "删除",
+    "cancel": "取消",
+    "ok": "确定",
     "name": "名称",
     "size": "大小",
-    "modified": "修改时间"
+    "modified": "修改时间",
+    "up": "上级",
+    "refresh": "刷新",
+    "noContext": "无会话上下文，请先从扫描页建立连接",
+    "connecting": "正在连接…",
+    "retry": "重试",
+    "rename": "重命名",
+    "deleteConfirm": "确认删除选中的 {{count}} 项？",
+    "empty": "空目录",
+    "folderName": "文件夹名称",
+    "newName": "新名称",
+    "error": {
+      "authFailed": "认证失败，请检查用户名或密码",
+      "unreachable": "无法连接到目标",
+      "timeout": "连接超时"
+    }
+  },
+  "vnc": {
+    "errorAuth": "认证失败，请检查 macOS 用户名或密码",
+    "errorUnreachable": "无法连接到目标 VNC",
+    "errorProtocol": "VNC 协议错误",
+    "errorTimeout": "连接超时",
+    "errorUnknown": "连接已断开",
+    "noContext": "没有可用的会话信息，请重新连接",
+    "connecting": "正在连接远程桌面…",
+    "disconnected": "已断开连接",
+    "reconnect": "重新连接",
+    "retry": "重试"
   },
   "protocols": {
     "desc": {

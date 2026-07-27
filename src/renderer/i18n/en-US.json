@@ -28,6 +28,15 @@
       "files": "Files"
     }
   },
+  "saved": {
+    "empty": "No saved connections yet — check \"Save this connection and credentials\" when connecting",
+    "deleteConfirm": "Delete this saved connection?",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "saveFailed": "Failed to save connection",
+    "loadFailed": "Failed to load saved connection",
+    "deleteFailed": "Failed to delete"
+  },
   "credentials": {
     "title": "Connection Credentials",
     "username": "Username",
@@ -38,6 +47,8 @@
     "privateKeyPlaceholder": "e.g. ~/.ssh/id_ed25519",
     "passphrase": "Key passphrase",
     "passphrasePlaceholder": "Passphrase protecting the key (if any)",
+    "saveThis": "Save this connection and credentials",
+    "saveNamePlaceholder": "Connection name (defaults to the target)",
     "submit": "Connect",
     "cancel": "Cancel"
   },
@@ -47,6 +58,18 @@
     "zoomActual": "Actual size",
     "disconnect": "Disconnect"
   },
+  "terminal": {
+    "noSession": "No session",
+    "connecting": "Connecting…",
+    "retry": "Retry",
+    "closed": "Session closed",
+    "reconnect": "Reconnect",
+    "error": {
+      "authFailed": "Authentication failed; check the username or password",
+      "unreachable": "Cannot reach the target",
+      "timeout": "Connection timed out"
+    }
+  },
   "files": {
     "local": "Local",
     "remote": "Remote",
@@ -54,9 +77,38 @@
     "download": "Download",
     "newFolder": "New Folder",
     "delete": "Delete",
+    "cancel": "Cancel",
+    "ok": "OK",
     "name": "Name",
     "size": "Size",
-    "modified": "Modified"
+    "modified": "Modified",
+    "up": "Up",
+    "refresh": "Refresh",
+    "noContext": "No session context — connect from the scan page first",
+    "connecting": "Connecting…",
+    "retry": "Retry",
+    "rename": "Rename",
+    "deleteConfirm": "Delete the selected {{count}} item(s)?",
+    "empty": "Empty directory",
+    "folderName": "Folder name",
+    "newName": "New name",
+    "error": {
+      "authFailed": "Authentication failed; check the username or password",
+      "unreachable": "Cannot reach the target",
+      "timeout": "Connection timed out"
+    }
+  },
+  "vnc": {
+    "errorAuth": "Authentication failed; check the macOS username or password",
+    "errorUnreachable": "Cannot reach the target VNC",
+    "errorProtocol": "VNC protocol error",
+    "errorTimeout": "Connection timed out",
+    "errorUnknown": "Connection closed",
+    "noContext": "No session info available — reconnect",
+    "connecting": "Connecting to remote desktop…",
+    "disconnected": "Disconnected",
+    "reconnect": "Reconnect",
+    "retry": "Retry"
   },
   "protocols": {
     "desc": {

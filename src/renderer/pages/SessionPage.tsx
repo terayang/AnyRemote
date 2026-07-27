@@ -1,21 +1,17 @@
 import { ApiOutlined } from '@ant-design/icons'
-import { Layout, Space, Tabs, Tag, Typography } from 'antd'
-import type { ComponentType } from 'react'
+import { Layout, Space, Tabs, Tag, Typography, message } from 'antd'
+import { useEffect, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ipcErrorMessage } from '../../shared/ipc'
 import DesktopPanel from '../components/DesktopPanel'
 import FileManagerPanel from '../components/FileManagerPanel'
 import TerminalPanel from '../components/TerminalPanel'
 import { useAppStore, type TabKind } from '../store'
+import { savedToCredentials, useSavedConnectionsStore } from '../store/savedConnections'
 import { useSessionStore } from '../store/session'
 
 const { Sider, Content } = Layout
 const { Text } = Typography
-
-/** Mock saved-connection list for the phase-1 UI prototype. */
-const SAVED_CONNECTIONS = [
-  { name: 'Mac Studio', address: '100.103.82.44' },
-  { name: 'Linux Relay', address: '100.110.128.32' }
-]
 
 const TAB_PANELS: Record<TabKind, ComponentType> = {
   desktop: DesktopPanel,
@@ -30,6 +26,7 @@ export default function SessionPage() {
   const activeTab = useAppStore((s) => s.activeTab)
   const setActiveTab = useAppStore((s) => s.setActiveTab)
   const closeTab = useAppStore((s) => s.closeTab)
+  const beginSavedSession = useAppStore((s) => s.beginSavedSession)
   const context = useSessionStore((s) => s.context)
   const target = context?.target ?? targetAddress
   const protocolTag =
@@ -37,8 +34,39 @@ export default function SessionPage() {
       ? context.protocols.join('+').toUpperCase()
       : null
 
+  const [messageApi, contextHolder] = message.useMessage()
+  const savedConnections = useSavedConnectionsStore((s) => s.connections)
+  const refreshSaved = useSavedConnectionsStore((s) => s.refresh)
+
+  useEffect(() => {
+    void refreshSaved()
+  }, [refreshSaved])
+
+  /**
+   * Sider entry click: ends the current session and reconnects to the saved
+   * target with its decrypted credentials (beginSavedSession resets the
+   * panels' per-session stores; the panels close their own SSH/VNC resources
+   * via their context-change cleanups).
+   */
+  const switchToSaved = async (id: string): Promise<void> => {
+    try {
+      const conn = await window.anyremote.connections.get(id)
+      if (!conn) {
+        await refreshSaved()
+        return
+      }
+      beginSavedSession(
+        { host: conn.host, protocols: conn.protocols },
+        savedToCredentials(conn)
+      )
+    } catch (err) {
+      void messageApi.error(`${t('saved.loadFailed')}: ${ipcErrorMessage(err)}`)
+    }
+  }
+
   return (
-    <Layout style={{ height: '100vh' }}>
+    <Layout style={{ height: '100%' }}>
+      {contextHolder}
       <Sider width={216} className="session-sider">
         <div className="session-sider-header">
           <ApiOutlined style={{ color: '#4c8dff' }} />
@@ -61,14 +89,23 @@ export default function SessionPage() {
               {target}
             </Text>
           </div>
-          {SAVED_CONNECTIONS.map((c) => (
-            <div key={c.address} className="saved-item">
-              <Text style={{ fontSize: 13 }}>{c.name}</Text>
-              <Text className="mono" type="secondary" style={{ fontSize: 12 }}>
-                {c.address}
-              </Text>
-            </div>
-          ))}
+          {savedConnections
+            .filter((c) => c.host !== target)
+            .map((c) => (
+              <div key={c.id} className="saved-item" onClick={() => void switchToSaved(c.id)}>
+                <Space size={6}>
+                  <Text style={{ fontSize: 13 }}>{c.name}</Text>
+                  {c.protocols.map((p) => (
+                    <Tag key={p} style={{ marginInlineEnd: 0 }}>
+                      {p.toUpperCase()}
+                    </Tag>
+                  ))}
+                </Space>
+                <Text className="mono" type="secondary" style={{ fontSize: 12 }}>
+                  {c.host}
+                </Text>
+              </div>
+            ))}
         </div>
       </Sider>
       <Content style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column' }}>

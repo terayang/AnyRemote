@@ -1,11 +1,15 @@
-import { ConfigProvider, theme } from 'antd'
+import { ConfigProvider, Segmented, theme } from 'antd'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { setLanguage, type AppLanguage } from './i18n'
 import ScanPage from './pages/ScanPage'
 import SessionPage from './pages/SessionPage'
 import { useAppStore } from './store'
 
 export default function App() {
   const page = useAppStore((s) => s.page)
+  const { i18n } = useTranslation()
+  const language: AppLanguage = i18n.language.startsWith('en') ? 'en-US' : 'zh-CN'
 
   // Keyboard-first shortcuts (see docs/ARCHITECTURE.md §8).
   useEffect(() => {
@@ -36,7 +40,20 @@ export default function App() {
         }
       }}
     >
-      {page === 'scan' ? <ScanPage /> : <SessionPage />}
+      <div className="app-shell">
+        <div className="app-header">
+          <Segmented
+            size="small"
+            value={language}
+            onChange={(lng) => setLanguage(lng as AppLanguage)}
+            options={[
+              { label: '中文', value: 'zh-CN' },
+              { label: 'EN', value: 'en-US' }
+            ]}
+          />
+        </div>
+        <div className="app-body">{page === 'scan' ? <ScanPage /> : <SessionPage />}</div>
+      </div>
     </ConfigProvider>
   )
 }

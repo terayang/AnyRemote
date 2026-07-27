@@ -6,6 +6,9 @@ import {
   sftpProgressChannel,
   sshCloseChannel,
   sshDataChannel,
+  type SavedConnection,
+  type SavedConnectionInput,
+  type SavedConnectionSummary,
   type SftpProgressEvent,
   type VncBridgeHandle,
   type VncStartBridgeParams
@@ -53,6 +56,19 @@ export interface AnyRemoteApi {
   localFs: {
     homeDir(): Promise<string>
     list(path: string): Promise<FileEntry[]>
+  }
+  connections: {
+    /** Summaries without secrets, for the saved-connection lists. */
+    list(): Promise<SavedConnectionSummary[]>
+    /** One connection with its secret decrypted; null when the id is unknown. */
+    get(id: string): Promise<SavedConnection | null>
+    /**
+     * Creates/updates a connection; the plaintext secret is encrypted in the
+     * main process before persisting. Rejects with code ENCRYPTION_UNAVAILABLE
+     * when safeStorage cannot encrypt.
+     */
+    save(input: SavedConnectionInput): Promise<SavedConnectionSummary>
+    delete(id: string): Promise<void>
   }
   dialog: {
     /** Multi-select file picker; resolves with [] when canceled. */
@@ -137,6 +153,12 @@ const api: AnyRemoteApi = {
   localFs: {
     homeDir: () => invoke<string>(IPC_CHANNELS.localFsHomeDir),
     list: (path) => invoke<FileEntry[]>(IPC_CHANNELS.localFsList, path)
+  },
+  connections: {
+    list: () => invoke<SavedConnectionSummary[]>(IPC_CHANNELS.connectionsList),
+    get: (id) => invoke<SavedConnection | null>(IPC_CHANNELS.connectionsGet, id),
+    save: (input) => invoke<SavedConnectionSummary>(IPC_CHANNELS.connectionsSave, input),
+    delete: (id) => invoke<void>(IPC_CHANNELS.connectionsDelete, id)
   },
   dialog: {
     pickFiles: () => invoke<string[]>(IPC_CHANNELS.dialogPickFiles),
