@@ -36,8 +36,8 @@ AnyRemote 是一个跨平台（macOS / Windows）桌面远程会话管理器：�
 
 从 [GitHub Releases](https://github.com/terayang/AnyRemote/releases) 下载最新版本：
 
-- **macOS**（Apple Silicon + Intel 单包）：`AnyRemote-<version>-mac-universal.dmg`
-- **Windows**：`AnyRemote-amd64-installer.exe`（NSIS 安装包，当前用户安装）或 `AnyRemote.exe`（免安装便携版）
+- **macOS**：`AnyRemote-<version>-mac-arm64.dmg`（Apple Silicon）或 `AnyRemote-<version>-mac-x64.dmg`（Intel）
+- **Windows**：`AnyRemote-<version>-windows-x64-installer.exe`（NSIS 安装包，当前用户安装）或 `AnyRemote-<version>-windows-x64-portable.exe`（免安装便携版）
 
 开发版（每次 push 到 main 或 PR 的 CI 构建）在对应 [workflow run 页面](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml)底部 artifacts 下载。
 
@@ -52,8 +52,8 @@ AnyRemote 是一个跨平台（macOS / Windows）桌面远程会话管理器：�
 
 ```bash
 npm install && npm --prefix frontend install
-npm run dist       # macOS：universal dmg → dist/
-npm run dist:win   # Windows NSIS 安装包 + 便携版 exe（wails 交叉构建，macOS 上同样可跑）
+npm run dist       # macOS：分别构建 arm64 与 x64 → dist/AnyRemote-<version>-mac-arm64.dmg 与 -mac-x64.dmg
+npm run dist:win   # Windows：安装包 + 便携版（带版本号）→ build/bin/
 ```
 
 ### 开发
@@ -134,8 +134,8 @@ AnyRemote is a cross-platform (macOS / Windows) desktop remote session manager: 
 
 Grab the latest version from [GitHub Releases](https://github.com/terayang/AnyRemote/releases):
 
-- **macOS** (Apple Silicon + Intel, single package): `AnyRemote-<version>-mac-universal.dmg`
-- **Windows**: `AnyRemote-amd64-installer.exe` (NSIS installer, per-user) or `AnyRemote.exe` (no-install portable)
+- **macOS**: `AnyRemote-<version>-mac-arm64.dmg` (Apple Silicon) or `AnyRemote-<version>-mac-x64.dmg` (Intel)
+- **Windows**: `AnyRemote-<version>-windows-x64-installer.exe` (NSIS installer, per-user) or `AnyRemote-<version>-windows-x64-portable.exe` (no-install portable)
 
 Development builds (CI on every push to main or PR) are available as artifacts at the bottom of the corresponding [workflow run page](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml).
 
@@ -150,8 +150,8 @@ See [docs/RELEASE.md](docs/RELEASE.md) for details.
 
 ```bash
 npm install && npm --prefix frontend install
-npm run dist       # macOS: universal dmg → dist/
-npm run dist:win   # Windows NSIS installer + portable exe (wails cross-build; also works on macOS)
+npm run dist       # macOS: per-arch builds → dist/AnyRemote-<version>-mac-arm64.dmg and -mac-x64.dmg
+npm run dist:win   # Windows: versioned installer + portable → build/bin/
 ```
 
 ### Development

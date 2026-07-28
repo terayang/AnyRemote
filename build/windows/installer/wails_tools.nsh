@@ -8,16 +8,16 @@
     !define INFO_PROJECTNAME "AnyRemote"
 !endif
 !ifndef INFO_COMPANYNAME
-    !define INFO_COMPANYNAME "AnyRemote"
+    !define INFO_COMPANYNAME "Silica Yang"
 !endif
 !ifndef INFO_PRODUCTNAME
     !define INFO_PRODUCTNAME "AnyRemote"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "1.0.0"
+    !define INFO_PRODUCTVERSION "0.1.1"
 !endif
 !ifndef INFO_COPYRIGHT
-    !define INFO_COPYRIGHT "Copyright........."
+    !define INFO_COPYRIGHT "Copyright © 2026 Silica Yang"
 !endif
 !ifndef PRODUCT_EXECUTABLE
     !define PRODUCT_EXECUTABLE "${INFO_PROJECTNAME}.exe"
