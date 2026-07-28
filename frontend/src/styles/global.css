@@ -335,3 +335,10 @@ body {
 .local-file-item:hover {
   background: #242424;
 }
+
+/* The antd <App> context wrapper renders a plain div that otherwise breaks
+   the html/body/#root 100% height chain (collapses the session workspace to
+   content height — the "desktop viewport is tiny" bug). */
+.ant-app {
+  height: 100%;
+}
