@@ -13,7 +13,7 @@
 | macOS (universal：Apple Silicon + Intel) | `AnyRemote-<version>-mac-universal.dmg` | CI macos runner / 本机 `npm run dist` |
 | Windows (x64) | `AnyRemote-amd64-installer.exe`（NSIS 安装包） | CI windows runner / 本机 `npm run dist:win`（macOS 上亦可交叉构建） |
 
-CI 每次构建（push 到 main / feat/wails 或 PR）都会把上述产物上传为 Actions artifacts：`anyremote-wails-macos`（dmg）、`anyremote-wails-windows`（NSIS exe），在对应 workflow run 页面底部下载。
+CI 每次构建（push 到 main 或 PR）都会把上述产物上传为 Actions artifacts：`anyremote-wails-macos`（dmg）、`anyremote-wails-windows`（NSIS 安装包 + 免安装便携版 exe），在对应 workflow run 页面底部下载。
 
 ### 本地打包
 
@@ -72,7 +72,7 @@ npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis
 | macOS (universal: Apple Silicon + Intel) | `AnyRemote-<version>-mac-universal.dmg` | CI macos runner / local `npm run dist` |
 | Windows (x64) | `AnyRemote-amd64-installer.exe` (NSIS installer) | CI windows runner / local `npm run dist:win` (cross-build also works on macOS) |
 
-Every CI build (push to main / feat/wails or PR) uploads these as Actions artifacts: `anyremote-wails-macos` (dmg) and `anyremote-wails-windows` (NSIS exe). Download them at the bottom of the workflow run page.
+Every CI build (push to main or PR) uploads these as Actions artifacts: `anyremote-wails-macos` (dmg) and `anyremote-wails-windows` (NSIS installer + no-install portable exe). Download them at the bottom of the workflow run page.
 
 ### Local packaging
 

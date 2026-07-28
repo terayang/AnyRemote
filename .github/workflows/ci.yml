@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feat/wails]
+    branches: [main]
   pull_request:
 
 # The failure-comment step posts commit comments via the GITHUB_TOKEN.

@@ -104,7 +104,7 @@ Go 服务层清单（`internal/`，`go test ./...` 共 **77** 个测试全绿）
 
 - macOS：`npm run dist` = `wails build -platform darwin/universal -clean` + `scripts/build-dmg.sh`（hdiutil UDZO，含 Applications 链接）→ `dist/AnyRemote-<version>-mac-universal.dmg`。
 - Windows：`npm run dist:win` = `wails build -platform windows/amd64 -nsis`。实测 wails v2.13 **在 macOS 上即可交叉产出** `AnyRemote-amd64-installer.exe`（内置 makensis，无需 Windows/无需 cgo），CI 的 windows runner 同样构建。
-- CI（`.github/workflows/ci.yml`）：push 到 main / feat/wails + PR 触发，macos-latest 与 windows-latest 矩阵；步骤为 setup-go 1.26 → setup-node 22 → 安装 wails v2.13.0 → `npm --prefix frontend ci` → typecheck → go test → 各自打包 → 上传 artifacts `anyremote-wails-macos`（dmg）/ `anyremote-wails-windows`（NSIS exe）。产物未签名，安装指引见 [RELEASE.md](RELEASE.md)。
+- CI（`.github/workflows/ci.yml`）：push 到 main + PR 触发，macos-latest 与 windows-latest 矩阵；步骤为 setup-go 1.26 → setup-node 22 → 安装 wails v2.13.0 → `npm --prefix frontend ci` → typecheck → go test → 各自打包 → 上传 artifacts `anyremote-wails-macos`（dmg）/ `anyremote-wails-windows`（NSIS exe）。产物未签名，安装指引见 [RELEASE.md](RELEASE.md)。
 
 ## 8. 已知限制
 
