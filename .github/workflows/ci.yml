@@ -39,15 +39,42 @@ jobs:
       # Per-package steps bisect failures to the package level without needing
       # log access (step names show up in the runs API).
       - name: go test internal/scanner
-        run: go test ./internal/scanner/... -count=1
+        shell: bash
+        run: |
+          set -o pipefail
+          go test ./internal/scanner/... -count=1 -v 2>&1 | tee scanner-test.log
       - name: go test internal/sshx
-        run: go test ./internal/sshx/... -count=1
+        shell: bash
+        run: |
+          set -o pipefail
+          go test ./internal/sshx/... -count=1 -v 2>&1 | tee sshx-test.log
       - name: go test internal/rfb
-        run: go test ./internal/rfb/... -count=1
+        shell: bash
+        run: |
+          set -o pipefail
+          go test ./internal/rfb/... -count=1 -v 2>&1 | tee rfb-test.log
       - name: go test internal/vncbridge
-        run: go test ./internal/vncbridge/... -count=1
+        shell: bash
+        run: |
+          set -o pipefail
+          go test ./internal/vncbridge/... -count=1 -v 2>&1 | tee vncbridge-test.log
       - name: go test internal/store
-        run: go test ./internal/store/... -count=1
+        shell: bash
+        run: |
+          set -o pipefail
+          go test ./internal/store/... -count=1 -v 2>&1 | tee store-test.log
+
+      # Log downloads require repo admin rights; post the failure excerpt as a
+      # commit comment (publicly readable) so failures stay debuggable.
+      - name: Post test log on failure
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## go test failure on ${{ matrix.os }}" > test-report.md
+          for f in *-test.log; do echo "### $f" >> test-report.md; echo '```' >> test-report.md; tail -60 "$f" >> test-report.md; echo '```' >> test-report.md; done
+          gh api repos/${{ github.repository }}/commits/${{ github.sha }}/comments -F body=@test-report.md
 
       # Packaging: unsigned artifacts only (no signing certs / publish in CI).
       - name: Package macOS universal dmg

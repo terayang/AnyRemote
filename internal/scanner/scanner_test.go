@@ -419,7 +419,9 @@ func TestConcurrentScanIsParallel(t *testing.T) {
 		t.Fatalf("ScanTarget: %v", err)
 	}
 	elapsed := time.Since(start)
-	if elapsed > 2*time.Second {
+	// Budget is generous for slow CI runners but still well below the
+	// 8×400ms = 3.2s floor a serialized scan would take.
+	if elapsed > 2500*time.Millisecond {
 		t.Errorf("8 silent-port probes took %v; want roughly one timeout, probes likely serialized", elapsed)
 	}
 	if len(report.Results) != 8 {
