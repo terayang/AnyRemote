@@ -261,7 +261,7 @@ func exchange(host string, port int, timeout time.Duration, opts exchangeOptions
 func mapDialError(err error, startedAt time.Time) exchangeOutcome {
 	out := exchangeOutcome{latencyMs: time.Since(startedAt).Milliseconds()}
 	switch {
-	case errors.Is(err, syscall.ECONNREFUSED):
+	case isConnRefused(err):
 		out.status = StatusClosed
 		out.detail = "connection refused (ECONNREFUSED)"
 	default:
@@ -275,6 +275,21 @@ func mapDialError(err error, startedAt time.Time) exchangeOutcome {
 		}
 	}
 	return out
+}
+
+// isConnRefused reports whether err is a connection-refused dial failure.
+// Windows reports WSAECONNREFUSED (10061), which errors.Is does not map to
+// syscall.ECONNREFUSED, so the numeric errno is matched as a fallback.
+func isConnRefused(err error) bool {
+	if errors.Is(err, syscall.ECONNREFUSED) {
+		return true
+	}
+	const wsaEConnRefused = syscall.Errno(10061)
+	var errno syscall.Errno
+	if errors.As(err, &errno) {
+		return errno == wsaEConnRefused
+	}
+	return false
 }
 
 // tlsVersionName renders a TLS version the way Node's getProtocol() does

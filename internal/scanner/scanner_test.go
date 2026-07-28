@@ -1,11 +1,14 @@
 package scanner
 
 import (
+	"errors"
 	"io"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -431,5 +434,25 @@ func TestConcurrentScanIsParallel(t *testing.T) {
 		if r.Status != StatusOpen {
 			t.Errorf("%s: status=%q, want open (silent but accepting)", r.ProtocolID, r.Status)
 		}
+	}
+}
+
+// The Windows dial path reports WSAECONNREFUSED (10061), which errors.Is does
+// not map to syscall.ECONNREFUSED; the fallback must still classify it as
+// refused (this regressed on windows-latest in CI).
+func TestIsConnRefusedCoversWindowsErrno(t *testing.T) {
+	wrapped := &net.OpError{
+		Op:  "dial",
+		Net: "tcp",
+		Err: &os.SyscallError{Syscall: "connectex", Err: syscall.Errno(10061)},
+	}
+	if !isConnRefused(wrapped) {
+		t.Error("WSAECONNREFUSED must classify as refused")
+	}
+	if !isConnRefused(syscall.ECONNREFUSED) {
+		t.Error("ECONNREFUSED must classify as refused")
+	}
+	if isConnRefused(errors.New("some other error")) {
+		t.Error("unrelated error must not classify as refused")
 	}
 }
