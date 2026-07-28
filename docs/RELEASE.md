@@ -13,7 +13,7 @@
 | macOS (universal：Apple Silicon + Intel) | `AnyRemote-<version>-mac-universal.dmg` | CI macos runner / 本机 `npm run dist` |
 | Windows (x64) | `AnyRemote-amd64-installer.exe`（NSIS 安装包） | CI windows runner / 本机 `npm run dist:win`（macOS 上亦可交叉构建） |
 
-CI 每次构建（push 到 main 或 PR）都会把上述产物上传为 Actions artifacts：`anyremote-wails-macos`（dmg）、`anyremote-wails-windows`（NSIS 安装包 + 免安装便携版 exe），在对应 workflow run 页面底部下载。
+正式版本发布在 [GitHub Releases](https://github.com/terayang/AnyRemote/releases)（打版本 tag 自动构建并挂载产物）。每次 push 到 main 或 PR 的 CI 构建产物（开发版）上传为 Actions artifacts：`anyremote-wails-macos`（dmg）、`anyremote-wails-windows`（NSIS 安装包 + 免安装便携版 exe），在对应 workflow run 页面底部下载。
 
 ### 本地打包
 
@@ -59,7 +59,7 @@ npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis
 
 ### 发布流程
 
-本项目目前**不发布 GitHub Release**：CI 只上传 artifacts。若将来接入正式发布，可基于 tag 触发 workflow 并上传 Release 资产，同时建议引入代码签名与公证（macOS：`CSC_LINK` / 公证 secrets；Windows： Authenticode 证书）。
+推送版本 tag（`v*`）即触发 [release.yml](../.github/workflows/release.yml)：双平台构建后自动创建 GitHub Release 并挂载产物（见上文）。版本号在根 `package.json`、`frontend/package.json` 与 `wails.json` 的 `info.productVersion` 三处维护，发版前需同步递增。代码签名与公证为后续事项（macOS：`CSC_LINK` / 公证 secrets；Windows：Authenticode 证书）。
 
 ---
 
@@ -72,7 +72,7 @@ npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis
 | macOS (universal: Apple Silicon + Intel) | `AnyRemote-<version>-mac-universal.dmg` | CI macos runner / local `npm run dist` |
 | Windows (x64) | `AnyRemote-amd64-installer.exe` (NSIS installer) | CI windows runner / local `npm run dist:win` (cross-build also works on macOS) |
 
-Every CI build (push to main or PR) uploads these as Actions artifacts: `anyremote-wails-macos` (dmg) and `anyremote-wails-windows` (NSIS installer + no-install portable exe). Download them at the bottom of the workflow run page.
+Stable versions are published to [GitHub Releases](https://github.com/terayang/AnyRemote/releases) (built and attached automatically on version tags). Every CI build (push to main or PR) uploads development builds as Actions artifacts: `anyremote-wails-macos` (dmg) and `anyremote-wails-windows` (NSIS installer + no-install portable exe). Download them at the bottom of the workflow run page.
 
 ### Local packaging
 
@@ -118,4 +118,4 @@ Also, the first time you save a connection with a password, macOS may prompt for
 
 ### Release process
 
-We currently **do not publish GitHub Releases**: CI only uploads artifacts. To enable real releases later, trigger the workflow on tags and upload Release assets; ideally add code signing and notarization at the same time (macOS: `CSC_LINK` / notarization secrets; Windows: Authenticode certificate).
+Pushing a version tag (`v*`) triggers [release.yml](../.github/workflows/release.yml): both platforms build, then a GitHub Release is created automatically with the artifacts attached (see above). The version lives in three places — root `package.json`, `frontend/package.json`, and `wails.json` `info.productVersion` — bump them together before tagging. Code signing and notarization are future work (macOS: `CSC_LINK` / notarization secrets; Windows: Authenticode certificate).

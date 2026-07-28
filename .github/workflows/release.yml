@@ -1,0 +1,86 @@
+name: Release
+
+# Tag-triggered release pipeline: pushing a version tag (v*) builds the
+# installers on both platforms and publishes them as a GitHub Release.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
+
+      # The go embed directive (all:frontend/dist) requires dist to exist.
+      - name: Build frontend (required for go embed)
+        run: npm --prefix frontend run build
+
+      - run: npm run typecheck
+
+      - run: go test ./... -count=1
+
+      - name: Package macOS universal dmg
+        if: matrix.os == 'macos-latest'
+        run: npm run dist
+
+      - name: Install NSIS (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install nsis -y
+
+      - name: Package Windows installer + portable
+        if: matrix.os == 'windows-latest'
+        run: npm run dist:win
+
+      - name: Upload macOS artifact
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: dist/*.dmg
+          if-no-files-found: error
+
+      - name: Upload Windows artifacts
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: build/bin/*.exe
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -34,10 +34,12 @@ AnyRemote 是一个跨平台（macOS / Windows）桌面远程会话管理器：�
 
 ### 下载与安装
 
-每次 CI 构建（push 到 main 或 PR）都会产出安装包并上传为 Actions artifacts，在对应 [workflow run 页面](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml)底部下载：
+从 [GitHub Releases](https://github.com/terayang/AnyRemote/releases) 下载最新版本：
 
-- `anyremote-wails-macos`：`AnyRemote-<version>-mac-universal.dmg`（Apple Silicon + Intel 单包）
-- `anyremote-wails-windows`：`AnyRemote-amd64-installer.exe`（NSIS 安装包，当前用户安装）与 `AnyRemote.exe`（免安装便携版）
+- **macOS**（Apple Silicon + Intel 单包）：`AnyRemote-<version>-mac-universal.dmg`
+- **Windows**：`AnyRemote-amd64-installer.exe`（NSIS 安装包，当前用户安装）或 `AnyRemote.exe`（免安装便携版）
+
+开发版（每次 push 到 main 或 PR 的 CI 构建）在对应 [workflow run 页面](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml)底部 artifacts 下载。
 
 **安装包未做代码签名**，首次启动会被系统安全机制拦截，属正常现象：
 
@@ -130,10 +132,12 @@ AnyRemote is a cross-platform (macOS / Windows) desktop remote session manager: 
 
 ### Download & install
 
-Every CI build (push to main or PR) produces installers and uploads them as Actions artifacts — grab them at the bottom of the corresponding [workflow run page](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml):
+Grab the latest version from [GitHub Releases](https://github.com/terayang/AnyRemote/releases):
 
-- `anyremote-wails-macos`: `AnyRemote-<version>-mac-universal.dmg` (Apple Silicon + Intel, single package)
-- `anyremote-wails-windows`: `AnyRemote-amd64-installer.exe` (NSIS installer, per-user) and `AnyRemote.exe` (no-install portable)
+- **macOS** (Apple Silicon + Intel, single package): `AnyRemote-<version>-mac-universal.dmg`
+- **Windows**: `AnyRemote-amd64-installer.exe` (NSIS installer, per-user) or `AnyRemote.exe` (no-install portable)
+
+Development builds (CI on every push to main or PR) are available as artifacts at the bottom of the corresponding [workflow run page](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml).
 
 **The installers are not code-signed**, so the OS will warn on first launch — this is expected:
 

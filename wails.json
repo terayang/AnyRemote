@@ -10,5 +10,12 @@
   "author": {
     "name": "Silica Yang",
     "email": "silicayang@gmail.com"
+  },
+  "info": {
+    "companyName": "Silica Yang",
+    "productName": "AnyRemote",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright © 2026 Silica Yang",
+    "comments": "Cross-platform desktop remote session manager"
   }
 }
