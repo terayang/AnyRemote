@@ -36,7 +36,18 @@ jobs:
 
       - run: npm run typecheck
 
-      - run: npm test
+      # Per-package steps bisect failures to the package level without needing
+      # log access (step names show up in the runs API).
+      - name: go test internal/scanner
+        run: go test ./internal/scanner/... -count=1
+      - name: go test internal/sshx
+        run: go test ./internal/sshx/... -count=1
+      - name: go test internal/rfb
+        run: go test ./internal/rfb/... -count=1
+      - name: go test internal/vncbridge
+        run: go test ./internal/vncbridge/... -count=1
+      - name: go test internal/store
+        run: go test ./internal/store/... -count=1
 
       # Packaging: unsigned artifacts only (no signing certs / publish in CI).
       - name: Package macOS universal dmg
