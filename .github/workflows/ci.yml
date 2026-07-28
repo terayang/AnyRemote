@@ -29,6 +29,11 @@ jobs:
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
 
+      # The go embed directive (all:frontend/dist) requires dist to exist, so
+      # the frontend must be built before go vet / go test can run.
+      - name: Build frontend (required for go embed)
+        run: npm --prefix frontend run build
+
       - run: npm run typecheck
 
       - run: npm test
