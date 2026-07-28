@@ -7,8 +7,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"os"
+	"time"
 
 	"anyremote/internal/vncbridge"
 )
@@ -90,6 +92,9 @@ func serve(conn net.Conn) {
 			if err := write(conn, fbu(pixels)); err != nil {
 				return
 			}
+			// Throttle to ~10fps so the client main thread stays responsive.
+			time.Sleep(100 * time.Millisecond)
+			pixels = bandedPixels()
 		case 4: // KeyEvent
 			if err := readN(conn, 7); err != nil {
 				return
@@ -123,14 +128,44 @@ func serverInit() []byte {
 }
 
 func bandedPixels() []byte {
+	return framePixels(time.Now())
+}
+
+// framePixels draws a simple fake desktop: menu bar, two windows (one slowly
+// drifting), and a dock — enough motion for demo captures, since noVNC keeps
+// requesting frames after each full update.
+func framePixels(t time.Time) []byte {
 	px := make([]byte, width*height*4)
-	bands := [][3]uint8{{0x4c, 0x8d, 0xff}, {0x2c, 0x2c, 0x2c}, {0xe3, 0xb3, 0x41}, {0x14, 0x14, 0x14}}
-	for y := 0; y < height; y++ {
-		c := bands[(y/(height/len(bands)))%len(bands)]
-		for x := 0; x < width; x++ {
-			i := (y*width + x) * 4
-			px[i], px[i+1], px[i+2], px[i+3] = c[0], c[1], c[2], 0
+	set := func(x, y int, r, g, b uint8) {
+		i := (y*width + x) * 4
+		px[i], px[i+1], px[i+2] = r, g, b
+	}
+	rect := func(x0, y0, w, h int, r, g, b uint8) {
+		for y := y0; y < y0+h && y < height; y++ {
+			for x := x0; x < x0+w && x < width; x++ {
+				if x >= 0 && y >= 0 {
+					set(x, y, r, g, b)
+				}
+			}
 		}
+	}
+	// wallpaper + menu bar
+	rect(0, 0, width, height, 0x2b, 0x3a, 0x55)
+	rect(0, 0, width, 22, 0x14, 0x14, 0x14)
+	// drifting window (title bar + body)
+	phase := float64(t.UnixMilli()%8000) / 8000 * 2 * math.Pi
+	wx := 140 + int(90*(1+math.Sin(phase)))
+	rect(wx, 90, 420, 24, 0x3c, 0x3c, 0x3c)
+	rect(wx, 114, 420, 260, 0xf5, 0xf5, 0xf5)
+	rect(wx+16, 130, 200, 12, 0x9c, 0x9c, 0x9c)
+	rect(wx+16, 152, 388, 200, 0xdd, 0xdd, 0xdd)
+	// static window
+	rect(620, 240, 300, 22, 0x3c, 0x3c, 0x3c)
+	rect(620, 262, 300, 160, 0x1e, 0x1e, 0x1e)
+	// dock
+	rect(0, height-48, width, 48, 0x18, 0x18, 0x18)
+	for i := 0; i < 8; i++ {
+		rect(60+i*52, height-40, 36, 36, 0x4c, 0x8d, 0xff)
 	}
 	return px
 }

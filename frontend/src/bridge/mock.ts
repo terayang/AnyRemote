@@ -119,6 +119,12 @@ export function createMockApi(connections: AnyRemoteApi['connections']): AnyRemo
     vnc: {
       startBridge: async () => {
         await delay(100)
+        // Demo/capture hook: `?vncbridge=<port>` points the desktop panel at a
+        // real bridge (e.g. scripts/mockvnc) under vite dev.
+        const port = new URLSearchParams(location.search).get('vncbridge')
+        if (port !== null) {
+          return { bridgeId: 'dev-bridge', wsPort: Number(port) }
+        }
         throw new Error('[UNREACHABLE] mock: no VNC backend under vite dev')
       },
       stopBridge: async () => undefined

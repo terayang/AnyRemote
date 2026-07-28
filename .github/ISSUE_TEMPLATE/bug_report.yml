@@ -1,0 +1,74 @@
+name: Bug 报告
+description: 报告 AnyRemote 的缺陷（崩溃、连接失败、界面异常等）
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填写完整信息，帮助我们快速定位问题。
+        安全漏洞请勿在此公开报告，请按 [SECURITY.md](https://github.com/terayang/AnyRemote/blob/main/SECURITY.md) 私下联系。
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 简要说明遇到的问题
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      description: 能稳定复现的操作步骤
+      placeholder: |
+        1. 打开 AnyRemote
+        2. 输入目标 IP ...
+        3. 点击 ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: 期望与实际行为
+      description: 期望发生什么？实际发生了什么？
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AnyRemote 版本
+      description: 如 0.1.2；CI 开发版请附 workflow run 链接
+      placeholder: 0.1.2
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 平台
+      options:
+        - macOS arm64（Apple Silicon）
+        - macOS x64（Intel）
+        - Windows x64
+    validations:
+      required: true
+  - type: checkboxes
+    id: areas
+    attributes:
+      label: 涉及功能
+      description: 勾选与问题相关的功能（可多选）
+      options:
+        - label: 协议扫描 / 探测
+        - label: SSH 终端
+        - label: VNC 远程桌面
+        - label: SFTP 文件管理
+        - label: 界面 / 交互
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或截图
+      description: 相关日志片段或截图（注意抹除密码、私钥等敏感信息）
+  - type: textarea
+    id: context
+    attributes:
+      label: 补充说明
+      description: 其他有助于定位的信息（目标系统类型、网络环境等）

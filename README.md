@@ -1,8 +1,12 @@
 # AnyRemote
 
 [![CI](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml/badge.svg)](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/terayang/AnyRemote)](https://github.com/terayang/AnyRemote/releases)
+[![License](https://img.shields.io/github/license/terayang/AnyRemote)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)](https://github.com/terayang/AnyRemote/releases)
+[![Go](https://img.shields.io/github/go-mod/go-version/terayang/AnyRemote)](go.mod)
 
-[English](#english) | [中文](#中文)
+[English](#english) | [中文](#中文) | [Releases](https://github.com/terayang/AnyRemote/releases) | [Issues](https://github.com/terayang/AnyRemote/issues) | [Contributing](CONTRIBUTING.md)
 
 ---
 
@@ -10,15 +14,11 @@
 
 AnyRemote 是一个跨平台（macOS / Windows）桌面远程会话管理器：输入目标 IP，自动探测其可用的远程协议（SSH / VNC / RDP / Telnet / FTP / SMB / HTTP(S)），多选后一键建立远程桌面、SSH 终端与 SFTP 文件管理会话。体验对标 1Remote / Tabby / Termius。
 
-### 截图
+> 合规提示：AnyRemote 是远程管理工具，请仅在你拥有或被明确授权的设备上使用。开发者不对任何滥用行为负责。
 
-| 协议自动探测 | 远程桌面（VNC） |
-|:-:|:-:|
-| ![协议卡片](docs/design/screenshots/02-cards.png) | ![远程桌面](docs/design/screenshots/03-desktop.png) |
+### 演示
 
-| SSH 终端 | SFTP 文件管理 |
-|:-:|:-:|
-| ![SSH 终端](docs/design/screenshots/04-terminal.png) | ![SFTP 文件管理](docs/design/screenshots/05-files.png) |
+![AnyRemote 演示：扫描 → 多选协议 → 远程桌面 / 终端 / 文件管理](docs/design/demo.gif)
 
 ### 功能
 
@@ -56,6 +56,13 @@ npm run dist       # macOS：分别构建 arm64 与 x64 → dist/AnyRemote-<vers
 npm run dist:win   # Windows：安装包 + 便携版（带版本号）→ build/bin/
 ```
 
+### 常见问题
+
+- **首次保存连接时弹出钥匙串授权？** 密码 / 私钥默认存系统钥匙串，macOS 首次写入需要授权一次；点「允许」即可。也可在设置（右上角齿轮）改为「本地文件」存储（AES-256-GCM 加密，换机器无法解密，但安全性低于钥匙串）。
+- **VNC 鼠标不显示？** Apple 的 Screen Sharing 不稳定下发光标形状，默认使用「本地光标」（工具条可切换「远程光标」）。若偶发不可见，切换一次光标模式即可。
+- **远程桌面卡顿 / 模糊？** 打开工具条齿轮「画面设置」：推荐 编码 **ZRLE** + 色深 **16 位** + 压缩 **省带宽**；文字清晰度优先时缩放选「原始尺寸」。
+- **能连哪些协议？** SSH 终端、SFTP 文件管理、VNC 桌面（含 macOS Apple DH 认证）；RDP / Telnet / FTP 目前仅探测展示，见 Roadmap。
+
 ### 开发
 
 前置：Go 1.26、Node.js 22+、wails CLI v2.13（`go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0`，确保 `~/go/bin` 在 PATH）。
@@ -67,6 +74,8 @@ npm test           # Go 测试（go test ./...，93 个）
 npm run typecheck  # go vet ./... + 前端 tsc --noEmit
 npm run build      # wails build → build/bin/（同时重新生成 frontend/wailsjs/ 绑定）
 ```
+
+参与贡献请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题请见 [SECURITY.md](SECURITY.md)；版本历史见 [CHANGELOG.md](CHANGELOG.md) 与 [Releases](https://github.com/terayang/AnyRemote/releases)。
 
 ### 技术架构
 
@@ -92,10 +101,10 @@ anyremote/
 ├─ frontend/
 │  ├─ src/                          # React UI（pages / components / store / i18n / bridge）
 │  └─ shared/                       # 前后端共享类型与协议常量
-├─ scripts/                         # build-dmg.sh / measure-startup.sh
+├─ scripts/                         # build-dmg.sh / measure-startup.sh / mockvnc（VNC 测试服务器）
 ├─ build/                           # appicon.png、darwin/windows 模板、构建输出（build/bin/，不入库）
 ├─ docs/                            # 架构、迁移、发布与设计文档
-└─ .github/                         # CI（macOS + Windows 双平台矩阵 + 打包产物）
+└─ .github/                         # CI / Release 工作流、Issue 与 PR 模板
 ```
 
 ### License
@@ -108,15 +117,11 @@ anyremote/
 
 AnyRemote is a cross-platform (macOS / Windows) desktop remote session manager: enter a target IP, auto-detect its available remote protocols (SSH / VNC / RDP / Telnet / FTP / SMB / HTTP(S)), pick several, and connect in one click — remote desktop, SSH terminal, and SFTP file management in a single app, on par with 1Remote / Tabby / Termius.
 
-### Screenshots
+> Fair use: AnyRemote is a remote administration tool — use it only on devices you own or are explicitly authorized to manage. The authors are not responsible for any misuse.
 
-| Protocol auto-detection | Remote desktop (VNC) |
-|:-:|:-:|
-| ![Protocol cards](docs/design/screenshots/02-cards.png) | ![Remote desktop](docs/design/screenshots/03-desktop.png) |
+### Demo
 
-| SSH terminal | SFTP file manager |
-|:-:|:-:|
-| ![SSH terminal](docs/design/screenshots/04-terminal.png) | ![SFTP file manager](docs/design/screenshots/05-files.png) |
+![AnyRemote demo: scan → pick protocols → desktop / terminal / files](docs/design/demo.gif)
 
 ### Features
 
@@ -154,6 +159,13 @@ npm run dist       # macOS: per-arch builds → dist/AnyRemote-<version>-mac-arm
 npm run dist:win   # Windows: versioned installer + portable → build/bin/
 ```
 
+### FAQ
+
+- **Keychain prompt when saving a connection?** Passwords / private keys live in the OS keychain by default, and macOS asks for permission on first write — click **Allow**. You can also switch to "Local file" storage (AES-256-GCM, undecryptable off this machine, but weaker than the keychain) in Settings (gear icon, top right).
+- **No VNC mouse cursor?** Apple's Screen Sharing delivers cursor shapes unreliably, so AnyRemote defaults to the local cursor (switchable to "Remote cursor" in the toolbar). If it ever goes invisible, toggle the cursor mode once.
+- **Laggy or blurry desktop?** Open the toolbar gear ("Display"): **ZRLE** encoding + **16-bit** color depth + **Saver** compression is recommended; for crisp text choose "Actual size" scaling.
+- **Which protocols are supported?** SSH terminal, SFTP file manager, and VNC desktop (including macOS Apple DH auth). RDP / Telnet / FTP are detection-only for now — see the roadmap.
+
 ### Development
 
 Prerequisites: Go 1.26, Node.js 22+, wails CLI v2.13 (`go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0`, with `~/go/bin` on your PATH).
@@ -165,6 +177,8 @@ npm test           # Go tests (go test ./..., 93 tests)
 npm run typecheck  # go vet ./... + frontend tsc --noEmit
 npm run build      # wails build → build/bin/ (regenerates frontend/wailsjs/ bindings)
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get involved, [SECURITY.md](SECURITY.md) for security issues, and [CHANGELOG.md](CHANGELOG.md) / [Releases](https://github.com/terayang/AnyRemote/releases) for version history.
 
 ### Architecture
 
@@ -190,10 +204,10 @@ anyremote/
 ├─ frontend/
 │  ├─ src/                          # React UI (pages / components / store / i18n / bridge)
 │  └─ shared/                       # Types & protocol constants shared with the Go side
-├─ scripts/                         # build-dmg.sh / measure-startup.sh
+├─ scripts/                         # build-dmg.sh / measure-startup.sh / mockvnc (VNC test server)
 ├─ build/                           # appicon.png, darwin/windows templates, build output (build/bin/, not committed)
 ├─ docs/                            # Architecture, migration, release & design docs
-└─ .github/                         # CI (macOS + Windows matrix + packaged artifacts)
+└─ .github/                         # CI / Release workflows, issue & PR templates
 ```
 
 ### License
