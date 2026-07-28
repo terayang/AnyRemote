@@ -94,6 +94,16 @@ export interface AnyRemoteApi {
     save(input: SavedConnectionInput): Promise<SavedConnectionSummary>
     delete(id: string): Promise<void>
   }
+  settings: {
+    /** Active secret backend: "keychain" (OS keychain) or "localFile" (encrypted file). */
+    getSecretStorage(): Promise<string>
+    /**
+     * Switches the secret backend and migrates every stored credential;
+     * rejects with [REMOTE_ERROR] for an unknown mode or
+     * [ENCRYPTION_UNAVAILABLE] when the migration fails.
+     */
+    setSecretStorage(mode: string): Promise<void>
+  }
   dialog: {
     /** Multi-select file picker; resolves with [] when canceled. */
     pickFiles(): Promise<string[]>
@@ -220,6 +230,10 @@ function createWailsApi(): AnyRemoteApi {
       },
       save: (input) => app().ConnectionsSave(input),
       delete: (id) => app().ConnectionsDelete(id)
+    },
+    settings: {
+      getSecretStorage: () => app().GetSecretStorage(),
+      setSecretStorage: (mode) => app().SetSecretStorage(mode)
     },
     dialog: {
       pickFiles: () => app().DialogPickFiles(),

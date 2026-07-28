@@ -4,6 +4,19 @@
     "tagline": "输入目标地址，自动探测可用的远程协议",
     "targetPlaceholder": "输入目标 IP 或主机名"
   },
+  "settings": {
+    "title": "设置",
+    "open": "设置",
+    "secretStorage": {
+      "label": "凭据存储方式",
+      "keychain": "系统钥匙串（推荐）",
+      "keychainHint": "由操作系统加密管理，密钥不随数据文件存储",
+      "localFile": "本地文件",
+      "localFileHint": "加密存于本机文件，换机器或备份无法解密；但本机其他程序可推导密钥，安全性低于钥匙串",
+      "migrating": "正在迁移凭据…",
+      "migrated": "凭据存储方式已切换，迁移完成"
+    }
+  },
   "scan": {
     "start": "开始扫描",
     "scanning": "正在探测协议…",

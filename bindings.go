@@ -347,6 +347,37 @@ func (a *App) ConnectionsDelete(id string) error {
 	return bindError(a.connections.Delete(id))
 }
 
+// --- Secret-storage settings (internal/store) ---
+
+// GetSecretStorage returns the active secret backend: "keychain" (OS
+// keychain) or "localFile" (encrypted file in the config dir).
+func (a *App) GetSecretStorage() string {
+	return string(a.connections.Mode())
+}
+
+// SetSecretStorage switches the secret backend and hot-swaps the store —
+// every stored secret is migrated to the new backend, the choice persists to
+// settings.json, no restart is needed. An unknown mode is rejected; a
+// migration failure reports ENCRYPTION_UNAVAILABLE and leaves the previous
+// backend (and setting) active.
+func (a *App) SetSecretStorage(mode string) error {
+	backend := store.SecretBackend(mode)
+	if !store.ValidSecretBackend(backend) {
+		return fmt.Errorf("[REMOTE_ERROR] unknown secret storage mode %q (want %q or %q)",
+			mode, store.SecretBackendKeychain, store.SecretBackendLocalFile)
+	}
+	if backend == a.connections.Mode() {
+		return nil
+	}
+	var newSecrets store.SecretStore
+	if backend == store.SecretBackendLocalFile {
+		newSecrets = store.NewFileSecrets(a.configDir)
+	} else {
+		newSecrets = store.KeyringSecrets()
+	}
+	return bindError(a.connections.MigrateSecrets(backend, newSecrets))
+}
+
 // --- Native file dialogs ---
 
 // DialogPickFiles opens a multi-select file picker; cancel resolves with an

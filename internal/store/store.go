@@ -1,7 +1,9 @@
 // Saved-connection store (M5): persists connection bookmarks to
-// <dataDir>/connections.json with each secret kept in the OS keychain
-// (macOS Keychain / Windows Credential Manager / Secret Service) through a
-// SecretStore abstraction — the file never contains a secret in any form.
+// <dataDir>/connections.json with each secret kept behind a SecretStore
+// abstraction — the OS keychain by default (macOS Keychain / Windows
+// Credential Manager / Secret Service), or the encrypted local file
+// (FileSecrets) when the user switches the secret-storage mode (settings.go)
+// — the file never contains a secret in any form.
 //
 // The JSON shapes mirror the shared TS types (SavedConnection /
 // SavedConnectionSummary / SavedConnectionInput in frontend/shared/ipc.ts) so
@@ -134,11 +136,14 @@ type Input struct {
 }
 
 // Store is the saved-connection repository: bookmark metadata on disk,
-// secrets in the OS keychain. Safe for concurrent use.
+// secrets in the active SecretStore backend. Safe for concurrent use.
 type Store struct {
 	mu      sync.Mutex
 	file    string
 	secrets SecretStore
+	// mode names the backend secrets currently points at (keychain for stores
+	// opened with New); MigrateSecrets keeps it in sync on a hot swap.
+	mode SecretBackend
 	// connections holds the bookmark metadata in file order; the Secret field
 	// of every entry is always nil (secrets never touch this slice).
 	connections []Connection
@@ -148,10 +153,13 @@ type Store struct {
 // AnyRemote), loading any existing connections.json. A missing file means an
 // empty store; an unreadable or legacy-format file is set aside (see load).
 // secrets must be non-nil (KeyringSecrets in production, in-memory in tests).
+// The store reports the keychain mode; NewWithMode picks the backend from
+// the persisted setting instead.
 func New(dataDir string, secrets SecretStore) *Store {
 	s := &Store{
 		file:    filepath.Join(dataDir, "connections.json"),
 		secrets: secrets,
+		mode:    SecretBackendKeychain,
 	}
 	s.load()
 	return s
@@ -385,6 +393,65 @@ func (s *Store) Delete(id string) error {
 		return err
 	}
 	return s.deleteSecretLocked(id)
+}
+
+// Mode returns the secret-storage backend the store currently runs on.
+func (s *Store) Mode() SecretBackend {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.mode
+}
+
+// MigrateSecrets switches the store to newBackend: every stored secret is
+// read from the current backend, written to the new one, then removed from
+// the old one; on success the choice persists to settings.json and the store
+// hot-swaps to the new backend (no restart). Entries without a stored secret
+// are skipped. The copy is best effort, not transactional: the first failing
+// entry aborts the migration with an ENCRYPTION_UNAVAILABLE error naming the
+// connection, the store keeps running on the previous backend, and settings
+// stay unchanged — secrets already copied remain readable from the previous
+// backend too (their old entries are only deleted after a successful copy),
+// so a retry simply overwrites them.
+func (s *Store) MigrateSecrets(newMode SecretBackend, newBackend SecretStore) error {
+	if !ValidSecretBackend(newMode) {
+		return fmt.Errorf("store: unknown secret storage mode %q", newMode)
+	}
+	if newBackend == nil {
+		return errors.New("store: cannot migrate to a nil secret backend")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, conn := range s.connections {
+		key := secretKey(conn.ID)
+		value, err := s.secrets.Get(key)
+		if errors.Is(err, ErrSecretNotFound) {
+			continue
+		}
+		if err != nil {
+			return &StoreError{
+				Code:    ErrEncryptionUnavailable,
+				Message: fmt.Sprintf("Failed to read the secret of %q from the current backend: %s", conn.Name, err),
+			}
+		}
+		if err := newBackend.Set(key, value); err != nil {
+			return &StoreError{
+				Code:    ErrEncryptionUnavailable,
+				Message: fmt.Sprintf("Failed to write the secret of %q to the new backend: %s", conn.Name, err),
+			}
+		}
+		if err := s.secrets.Delete(key); err != nil && !errors.Is(err, ErrSecretNotFound) {
+			return &StoreError{
+				Code:    ErrEncryptionUnavailable,
+				Message: fmt.Sprintf("The secret of %q was copied but could not be removed from the previous backend: %s", conn.Name, err),
+			}
+		}
+	}
+	if err := SaveSecretBackend(filepath.Dir(s.file), newMode); err != nil {
+		return err
+	}
+	s.secrets = newBackend
+	s.mode = newMode
+	return nil
 }
 
 // newUUID returns a random RFC 4122 version 4 UUID, like the TS randomUUID().

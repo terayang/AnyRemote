@@ -21,8 +21,14 @@ type App struct {
 	// ssh owns every live SSH session (shell + SFTP share its connections).
 	ssh *sshx.Manager
 
-	// connections persists saved connections; secrets live in the OS keychain.
+	// connections persists saved connections; secrets live in the backend the
+	// secret-storage setting selects (OS keychain by default, FileSecrets for
+	// the local-file mode).
 	connections *store.Store
+	// configDir is the AnyRemote per-user config dir holding connections.json,
+	// settings.json and (in local-file mode) secrets.json; SetSecretStorage
+	// needs it to construct the FileSecrets backend.
+	configDir string
 
 	bridgesMu sync.Mutex
 	// bridges holds the live VNC WebSocket bridges by bridge id.
@@ -33,24 +39,34 @@ type App struct {
 
 // NewApp creates a new App instance.
 func NewApp() *App {
+	connections, configDir := newConnectionStore()
 	return &App{
 		ssh:         sshx.NewManager(),
-		connections: newConnectionStore(),
+		connections: connections,
+		configDir:   configDir,
 		bridges:     make(map[string]*vncbridge.Bridge),
 	}
 }
 
 // newConnectionStore opens the saved-connection store at the default per-user
-// config location (os.UserConfigDir()/AnyRemote/connections.json); secrets go
-// to the OS keychain via the keyring-backed SecretStore. When the config dir
-// cannot be resolved ($HOME or platform equivalent unset) the store falls
-// back to the temp dir so the app stays usable for the session.
-func newConnectionStore() *store.Store {
+// config location (os.UserConfigDir()/AnyRemote), with the secret backend the
+// persisted setting selects (OS keychain by default, the encrypted local file
+// for the "localFile" mode). When the config dir cannot be resolved ($HOME or
+// platform equivalent unset) the store falls back to the temp dir so the app
+// stays usable for the session; it likewise falls back to the keychain
+// backend if the configured one cannot be constructed. It returns the store
+// and the resolved config dir.
+func newConnectionStore() (*store.Store, string) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		configDir = os.TempDir()
 	}
-	return store.New(filepath.Join(configDir, "AnyRemote"), store.KeyringSecrets())
+	dir := filepath.Join(configDir, "AnyRemote")
+	s, _, err := store.NewWithMode(dir, store.KeyringSecrets)
+	if err != nil {
+		return store.New(dir, store.KeyringSecrets()), dir
+	}
+	return s, dir
 }
 
 // startup is called when the app starts; the context is used for event

@@ -128,6 +128,12 @@ export function createMockApi(connections: AnyRemoteApi['connections']): AnyRemo
       list: async () => MOCK_FILES
     },
     connections,
+    settings: {
+      // No secret backend under vite dev: report the keychain default and
+      // accept switches as no-ops.
+      getSecretStorage: async () => 'keychain',
+      setSecretStorage: async () => undefined
+    },
     dialog: {
       pickFiles: async () => [],
       pickSavePath: async () => null

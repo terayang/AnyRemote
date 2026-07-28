@@ -4,6 +4,19 @@
     "tagline": "Enter a target address to auto-detect available remote protocols",
     "targetPlaceholder": "Enter target IP or hostname"
   },
+  "settings": {
+    "title": "Settings",
+    "open": "Settings",
+    "secretStorage": {
+      "label": "Credential storage",
+      "keychain": "System keychain (recommended)",
+      "keychainHint": "Encrypted and managed by the OS; the key is never stored with the data files",
+      "localFile": "Local file",
+      "localFileHint": "Encrypted in a file on this machine; cannot be decrypted on another machine or from a backup, but other programs on this machine can derive the key — less secure than the keychain",
+      "migrating": "Migrating credentials…",
+      "migrated": "Credential storage switched; migration complete"
+    }
+  },
   "scan": {
     "start": "Start Scan",
     "scanning": "Detecting protocols…",

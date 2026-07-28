@@ -51,6 +51,12 @@ export interface WailsApp {
   ConnectionsGet(id: string): Promise<SavedConnection>
   ConnectionsSave(input: SavedConnectionInput): Promise<SavedConnectionSummary>
   ConnectionsDelete(id: string): Promise<void>
+  GetSecretStorage(): Promise<string>
+  /**
+   * Rejects with [REMOTE_ERROR] for an unknown mode or
+   * [ENCRYPTION_UNAVAILABLE] when the credential migration fails.
+   */
+  SetSecretStorage(mode: string): Promise<void>
   DialogPickFiles(): Promise<string[]>
   /** Resolves with "" when the dialog is canceled. */
   DialogPickSavePath(defaultName: string): Promise<string>
