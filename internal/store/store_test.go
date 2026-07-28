@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -133,7 +134,9 @@ func TestSaveNewListAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("stat connections.json: %v", err)
 	}
-	if info.Mode().Perm() != 0o600 {
+	// Windows has no Unix permission bits (Chmod only honors the read-only
+	// flag), so the 0600 guarantee is only verifiable elsewhere.
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 		t.Fatalf("connections.json mode: expected 0600, got %o", info.Mode().Perm())
 	}
 }
