@@ -8,14 +8,10 @@
   "license": "MIT",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "smoke": "node scripts/smoke-scan.mjs && node scripts/smoke-terminal.mjs && node scripts/smoke-files.mjs && node scripts/smoke-vnc.mjs && node scripts/smoke-saved.mjs && node scripts/smoke-ux.mjs",
-    "dist": "npm run build && electron-builder --mac --publish never",
-    "dist:win": "npm run build && electron-builder --win --publish never",
-    "dist:all": "npm run build && electron-builder --mac --win --publish never"
+    "dev": "wails dev",
+    "build": "wails build",
+    "typecheck": "go vet ./... && npm --prefix frontend run typecheck",
+    "test": "go test ./..."
   },
   "dependencies": {
     "@novnc/novnc": "^1.7.0",

@@ -5,3 +5,9 @@ release/
 _ref/
 *.log
 .DS_Store
+
+# Wails / frontend artifacts
+build/bin/
+frontend/node_modules/
+frontend/dist/
+frontend/wailsjs/

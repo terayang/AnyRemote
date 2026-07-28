@@ -16,8 +16,9 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
 
 ## 目录约定
 
-- `src/main/` Electron 主进程（网络与协议层）；`src/preload/`；`src/renderer/` React UI；`src/shared/` 主/渲染共享类型与常量。
-- `tests/` 测试；`docs/` 文档；`build/` 应用图标（icon.png / icon.icns，electron-builder 使用）；`_ref/` 第三方参考源码（仅供阅读，不入库，不修改）。
+- Wails 布局（M4 起）：Go 后端在根包（`main.go` / `app.go` / `bindings.go`）与 `internal/`（scanner / sshx / rfb / vncbridge，服务层）；React UI 在 `frontend/src/`，主/渲染共享类型在 `frontend/shared/`，`window.anyremote` 适配层在 `frontend/src/bridge/`；`frontend/wailsjs/` 为 `wails build` 生成的绑定（不入库）。
+- Electron 遗留（M6 清理，勿新增依赖）：`src/main/`（TS 旧主进程，仅作参考）、`tests/`（vitest 旧测试）、`scripts/smoke-*.mjs`（Playwright Electron 冒烟）。
+- `docs/` 文档；`build/` 应用图标与 wails 构建输出（`build/bin/`，不入库）；`_ref/` 第三方参考源码（仅供阅读，不入库，不修改）。
 
 ## 工作流约定
 
@@ -30,19 +31,18 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
 
 ## 代码规范
 
-- TypeScript strict；代码注释、提交信息用英文；界面文案默认简体中文并走 i18n 字典（`src/renderer/i18n/`）。
+- TypeScript strict；代码注释、提交信息用英文；界面文案默认简体中文并走 i18n 字典（`frontend/src/i18n/`）。
 - **优先采用成熟开源方案**（star 高、维护活跃）；任何自研模块须在验收报告中附调研结论与理由；禁止引入无人维护的依赖。
 - 最小改动原则；新代码风格与周边文件保持一致。
-- 凭据、密钥永不入库、不写入日志；一律经 Electron safeStorage 加密后存储。
+- 凭据、密钥永不入库、不写入日志；加密存储随 Wails 迁移在 M5 落地（Electron 时代走 safeStorage）。
 - 不留空壳实现（不用 `// TODO: implement` 式占位应付验收）。
 
 ## 文档维护
 
 - 修改本文件所述约定、目录结构、命令时，必须同步更新本文件。
-- 常用命令（脚手架建立后填写并保持最新）：
-  - 安装：`npm install`
-  - 开发：`npm run dev`（electron-vite dev，HMR）
-  - 测试：`npm test`（vitest 单测）；类型检查 `npm run typecheck`
-  - 打包：`npm run build`（electron-vite build → `out/`）
-  - 安装包：`npm run dist`（本机 macOS dmg，arm64 + x64）/ `npm run dist:win`（Windows NSIS，须在 Windows 上运行）/ `npm run dist:all`；electron-builder，配置在 electron-builder.yml，产物 → `dist/`，publish 关闭只产安装包；详见 docs/RELEASE.md
-  - 冒烟：`npm run smoke`（需先 `npm run build`；Playwright Electron 驱动真实应用，依次为 scripts/smoke-scan / smoke-terminal / smoke-files / smoke-vnc / smoke-saved / smoke-ux 六个 .mjs，也可单独运行）
+- 常用命令（Wails 版，M4 起）：
+  - 安装：`npm install && npm --prefix frontend install`
+  - 开发：`npm run dev`（wails dev；纯前端预览可 `npm --prefix frontend run dev`，bridge 自动切 mock）
+  - 测试：`npm test`（go test ./...）；类型检查 `npm run typecheck`（go vet + frontend tsc）
+  - 打包：`npm run build`（wails build → `build/bin/`；同时重新生成 `frontend/wailsjs/` 绑定）
+  - 冒烟 / 安装包：Electron 时代的 smoke / dist 脚本已随迁移移除，M6 以 Wails 版重建
