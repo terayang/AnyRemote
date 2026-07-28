@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"anyremote/internal/sshx"
+	"anyremote/internal/store"
 	"anyremote/internal/vncbridge"
 )
 
@@ -18,6 +21,9 @@ type App struct {
 	// ssh owns every live SSH session (shell + SFTP share its connections).
 	ssh *sshx.Manager
 
+	// connections persists saved connections; secrets live in the OS keychain.
+	connections *store.Store
+
 	bridgesMu sync.Mutex
 	// bridges holds the live VNC WebSocket bridges by bridge id.
 	bridges map[string]*vncbridge.Bridge
@@ -28,9 +34,23 @@ type App struct {
 // NewApp creates a new App instance.
 func NewApp() *App {
 	return &App{
-		ssh:     sshx.NewManager(),
-		bridges: make(map[string]*vncbridge.Bridge),
+		ssh:         sshx.NewManager(),
+		connections: newConnectionStore(),
+		bridges:     make(map[string]*vncbridge.Bridge),
 	}
+}
+
+// newConnectionStore opens the saved-connection store at the default per-user
+// config location (os.UserConfigDir()/AnyRemote/connections.json); secrets go
+// to the OS keychain via the keyring-backed SecretStore. When the config dir
+// cannot be resolved ($HOME or platform equivalent unset) the store falls
+// back to the temp dir so the app stays usable for the session.
+func newConnectionStore() *store.Store {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		configDir = os.TempDir()
+	}
+	return store.New(filepath.Join(configDir, "AnyRemote"), store.KeyringSecrets())
 }
 
 // startup is called when the app starts; the context is used for event

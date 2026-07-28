@@ -28,6 +28,7 @@ import (
 	"anyremote/internal/rfb"
 	"anyremote/internal/scanner"
 	"anyremote/internal/sshx"
+	"anyremote/internal/store"
 	"anyremote/internal/vncbridge"
 )
 
@@ -50,6 +51,10 @@ func bindError(err error) error {
 	var sshErr *sshx.SshError
 	if errors.As(err, &sshErr) {
 		return fmt.Errorf("[%s] %s", sshErr.Code, sshErr.Message)
+	}
+	var storeErr *store.StoreError
+	if errors.As(err, &storeErr) {
+		return fmt.Errorf("[%s] %s", storeErr.Code, storeErr.Message)
 	}
 	var authErr *rfb.RfbAuthError
 	if errors.As(err, &authErr) {
@@ -305,6 +310,41 @@ func (a *App) LocalFsList(path string) ([]sshx.FileEntry, error) {
 		return entries[i].Name < entries[j].Name
 	})
 	return entries, nil
+}
+
+// --- Saved connections (encrypted persistence, internal/store) ---
+
+// ConnectionsList returns every saved connection without secrets.
+func (a *App) ConnectionsList() ([]store.Summary, error) {
+	return a.connections.List(), nil
+}
+
+// ConnectionsGet returns one connection with its decrypted secret (for
+// establishing a session). An unknown id fails with NOT_FOUND; the frontend
+// bridge maps that code to null.
+func (a *App) ConnectionsGet(id string) (store.Connection, error) {
+	conn, err := a.connections.Get(id)
+	if err != nil {
+		return store.Connection{}, bindError(err)
+	}
+	return conn, nil
+}
+
+// ConnectionsSave creates (empty id) or updates (existing id) one connection.
+// An omitted secret keeps the previously saved one, an explicitly empty
+// secret clears it; a keychain failure reports ENCRYPTION_UNAVAILABLE.
+func (a *App) ConnectionsSave(in store.Input) (store.Summary, error) {
+	summary, err := a.connections.Save(in)
+	if err != nil {
+		return store.Summary{}, bindError(err)
+	}
+	return summary, nil
+}
+
+// ConnectionsDelete removes one connection and its keychain entry; an unknown
+// id is a no-op (idempotent, matching the Electron handler).
+func (a *App) ConnectionsDelete(id string) error {
+	return bindError(a.connections.Delete(id))
 }
 
 // --- Native file dialogs ---

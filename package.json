@@ -2,42 +2,12 @@
   "name": "anyremote",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
-  "description": "Cross-platform desktop remote session manager (SSH / VNC / SFTP)",
-  "author": "Silica Yang <silicayang@gmail.com>",
-  "license": "MIT",
-  "main": "./out/main/index.js",
   "scripts": {
     "dev": "wails dev",
     "build": "wails build",
     "typecheck": "go vet ./... && npm --prefix frontend run typecheck",
-    "test": "go test ./..."
-  },
-  "dependencies": {
-    "@novnc/novnc": "^1.7.0",
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/xterm": "^6.0.0",
-    "antd": "^5.29.3",
-    "i18next": "^26.3.6",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-i18next": "^17.0.11",
-    "ssh2": "^1.17.0",
-    "ws": "^8.21.1",
-    "zustand": "^5.0.14"
-  },
-  "devDependencies": {
-    "@types/node": "^26.1.1",
-    "@types/react": "^18.3.31",
-    "@types/react-dom": "^18.3.7",
-    "@types/ssh2": "^1.15.5",
-    "@types/ws": "^8.18.1",
-    "electron": "^43.2.0",
-    "electron-builder": "^26.15.3",
-    "electron-vite": "^5.0.0",
-    "playwright": "^1.62.0",
-    "typescript": "^7.0.2",
-    "vite": "^7.3.6",
-    "vitest": "^4.1.10"
+    "test": "go test ./...",
+    "dist": "wails build -platform darwin/universal -clean && bash scripts/build-dmg.sh",
+    "dist:win": "wails build -platform windows/amd64 -nsis"
   }
 }

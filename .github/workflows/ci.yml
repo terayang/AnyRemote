@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/wails]
   pull_request:
 
 jobs:
@@ -15,57 +15,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - run: npm ci
+      - name: Install wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
 
       - run: npm run typecheck
 
       - run: npm test
 
-      - run: npm run build
-
-      # Packaging: unsigned installers (no certs in CI), artifacts only —
-      # electron-builder publish is disabled (`publish: null` + --publish never).
-      - name: Package macOS dmg (arm64 + x64)
+      # Packaging: unsigned artifacts only (no signing certs / publish in CI).
+      - name: Package macOS universal dmg
         if: matrix.os == 'macos-latest'
         run: npm run dist
 
-      - name: Package Windows NSIS installer (x64)
+      - name: Install NSIS (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install nsis -y
+
+      - name: Package Windows NSIS installer
         if: matrix.os == 'windows-latest'
         run: npm run dist:win
 
-      - name: Upload macOS arm64 artifact
+      - name: Upload macOS artifact
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: anyremote-macos-arm64
-          path: dist/*arm64.dmg
+          name: anyremote-wails-macos
+          path: dist/*.dmg
           if-no-files-found: error
 
-      - name: Upload macOS x64 artifact
-        if: matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: anyremote-macos-x64
-          path: dist/*x64.dmg
-          if-no-files-found: error
-
-      - name: Upload Windows installer artifact
+      - name: Upload Windows artifact
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: anyremote-windows-installer
-          path: dist/*win-x64.exe
-          if-no-files-found: error
-
-      - name: Upload Windows portable artifact
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: anyremote-windows-portable
-          path: dist/*portable*.exe
+          name: anyremote-wails-windows
+          path: build/bin/*.exe
           if-no-files-found: error

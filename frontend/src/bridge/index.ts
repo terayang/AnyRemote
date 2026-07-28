@@ -14,15 +14,18 @@
  *     prefix (bindError in bindings.go) and Wails rejects with a real Error,
  *     so the renderer's ipcErrorCode()/ipcErrorMessage() work untouched.
  *
- * Saved connections have no Go backend yet (M5 adds encrypted persistence);
- * both implementations share an in-memory store so the UI flows work and
- * entries survive until the app exits. Secrets live in memory only.
+ * Saved connections are persisted by the Go store (internal/store): bookmark
+ * metadata in connections.json under the per-user config dir, secrets in the
+ * OS keychain. On save, an omitted secret preserves the stored one and an
+ * explicitly empty secret clears it (unlike the retired Electron store, which
+ * dropped the secret whenever it was omitted).
  *
  * Under plain `vite dev` (no Wails runtime) the facade falls back to a static
  * mock (./mock) so the UI stays previewable; see the useMock check below.
  */
 
 import {
+  ipcErrorCode,
   sftpProgressChannel,
   sshCloseChannel,
   sshDataChannel,
@@ -84,8 +87,9 @@ export interface AnyRemoteApi {
     /** One connection with its secret; null when the id is unknown. */
     get(id: string): Promise<SavedConnection | null>
     /**
-     * Creates/updates a connection. Currently kept in memory only (see the
-     * header note); M5 restores encrypted persistence on the Go side.
+     * Creates/updates a connection, persisted by the Go store (see the header
+     * note): an omitted secret preserves the saved one, an explicitly empty
+     * secret (empty data) clears it.
      */
     save(input: SavedConnectionInput): Promise<SavedConnectionSummary>
     delete(id: string): Promise<void>
@@ -99,13 +103,12 @@ export interface AnyRemoteApi {
 }
 
 /**
- * In-memory saved-connections store shared by the Wails and mock
- * implementations: the Go backend does not persist connections yet (M5 will
- * add a store with encrypted secrets). Save semantics mirror the Electron
- * store (src/main/store.ts): an omitted secret drops any previous one, and
- * delete of an unknown id is a no-op.
+ * In-memory saved-connections stand-in feeding ONLY the dev mock (mock.ts);
+ * the Wails path calls the Go store (internal/store) instead. Save semantics
+ * mirror the retired Electron store: an omitted secret drops any previous
+ * one, and delete of an unknown id is a no-op.
  */
-function createEphemeralConnections(): AnyRemoteApi['connections'] {
+function createMockConnections(): AnyRemoteApi['connections'] {
   const entries = new Map<string, SavedConnection>()
   const summaryOf = (conn: SavedConnection): SavedConnectionSummary => {
     const { secret: _secret, ...summary } = conn
@@ -151,7 +154,7 @@ function subscribe<T extends unknown[]>(channel: string, cb: (...args: T) => voi
 }
 
 /** The Wails-backed implementation, delegating to the bound Go methods. */
-function createWailsApi(connections: AnyRemoteApi['connections']): AnyRemoteApi {
+function createWailsApi(): AnyRemoteApi {
   return {
     // No Electron/Node under Wails; nothing in the renderer reads these.
     versions: { electron: '', node: '', chrome: '' },
@@ -203,7 +206,21 @@ function createWailsApi(connections: AnyRemoteApi['connections']): AnyRemoteApi 
       homeDir: () => app().LocalFsHomeDir(),
       list: (path) => app().LocalFsList(path)
     },
-    connections,
+    connections: {
+      list: () => app().ConnectionsList(),
+      get: async (id) => {
+        // The Go store rejects an unknown id with NOT_FOUND; the renderer
+        // contract (and the retired Electron store) expects null instead.
+        try {
+          return await app().ConnectionsGet(id)
+        } catch (err) {
+          if (ipcErrorCode(err) === 'NOT_FOUND') return null
+          throw err
+        }
+      },
+      save: (input) => app().ConnectionsSave(input),
+      delete: (id) => app().ConnectionsDelete(id)
+    },
     dialog: {
       pickFiles: () => app().DialogPickFiles(),
       pickSavePath: async (defaultName) => {
@@ -220,8 +237,7 @@ function createWailsApi(connections: AnyRemoteApi['connections']): AnyRemoteApi 
 // (import.meta.env.DEV is false there).
 const useMock = import.meta.env.DEV && window.go === undefined
 
-const connections = createEphemeralConnections()
-const api: AnyRemoteApi = useMock ? createMockApi(connections) : createWailsApi(connections)
+const api: AnyRemoteApi = useMock ? createMockApi(createMockConnections()) : createWailsApi()
 
 if (useMock) {
   console.warn(

@@ -10,25 +10,29 @@
 
 | 平台 | 产物 | 构建方式 |
 |------|------|----------|
-| macOS (Apple Silicon) | `AnyRemote-<version>-mac-arm64.dmg` | CI macos runner / 本机 `npm run dist` |
-| macOS (Intel) | `AnyRemote-<version>-mac-x64.dmg` | CI macos runner / 本机 `npm run dist` |
-| Windows (x64) | `AnyRemote-<version>-win-x64.exe`（NSIS 安装包） | CI windows runner / 本机交叉打包（`npm run dist:win`） |
-| Windows (x64) | `AnyRemote-<version>-win-portable-x64.exe`（免安装便携版） | CI windows runner / 本机交叉打包（`npm run dist:win`） |
+| macOS (universal：Apple Silicon + Intel) | `AnyRemote-<version>-mac-universal.dmg` | CI macos runner / 本机 `npm run dist` |
+| Windows (x64) | `AnyRemote-amd64-installer.exe`（NSIS 安装包） | CI windows runner / 本机 `npm run dist:win`（macOS 上亦可交叉构建） |
 
-CI 每次构建（push 到 main 或 PR）都会把上述产物上传为 Actions artifacts：`anyremote-macos-arm64`、`anyremote-macos-x64`、`anyremote-windows-installer`（NSIS 安装包）与 `anyremote-windows-portable`（便携版 exe），在对应 workflow run 页面底部下载。
+CI 每次构建（push 到 main / feat/wails 或 PR）都会把上述产物上传为 Actions artifacts：`anyremote-wails-macos`（dmg）、`anyremote-wails-windows`（NSIS exe），在对应 workflow run 页面底部下载。
 
 ### 本地打包
 
+前置：Go 1.26 + wails CLI v2.13（`~/go/bin` 在 PATH）+ Node.js。
+
 ```bash
-npm install
-npm run dist       # macOS：arm64 + x64 两个 dmg → dist/
-npm run dist:win   # Windows 安装包（需在 Windows 上运行；macOS 上不交叉构建）
-npm run dist:all   # 一次构建全部（在当前平台可行的目标）
+npm install && npm --prefix frontend install
+npm run dist       # macOS：wails build -platform darwin/universal -clean
+                   #   + scripts/build-dmg.sh → dist/AnyRemote-<version>-mac-universal.dmg
+npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis
+                   #   → build/bin/AnyRemote-amd64-installer.exe
 ```
 
-打包配置在 `electron-builder.yml`（appId `com.anyremote.app`，asar 开启，publish 关闭）；图标在 `build/`（`icon.png` 1024x1024 源图，`icon.icns` 由 iconutil 生成；Windows 的 .ico 由 electron-builder 从 PNG 自动转换）。
+打包要点：
 
-macOS 本地快速验证单架构包：`npm run build && npx electron-builder --mac --arm64 --publish never`。
+- dmg 由 `scripts/build-dmg.sh` 用 `hdiutil`（UDZO 压缩）产出，内含 `.app` 与 `/Applications` 链接；文件名版本号取根 `package.json`。
+- NSIS 安装包由 wails 内置 makensis 生成（v2.13 起 macOS 也可交叉产出，无需 Windows）；为当前用户安装，可选目录，创建桌面快捷方式。
+- 图标源图为 `build/appicon.png`（1024×1024），wails build 自动生成 mac 的 `iconfile.icns` 与 Windows 内嵌图标。
+- 注意：app bundle 的 `CFBundleShortVersionString` 当前为 wails 默认 `1.0.0`（`wails.json` 未配置 `info` 段），与 `package.json` 的 `0.0.1` 不一致，后续可在 `wails.json` 配齐 `info.productVersion`。
 
 ### 未签名安装包的安全提示（重要）
 
@@ -44,15 +48,18 @@ macOS 本地快速验证单架构包：`npm run build && npx electron-builder --
 如仍被拦截：系统设置 → 隐私与安全性 → 安全性一节会出现"仍要打开 AnyRemote"按钮，点击即可。
 也可在终端执行一次性移除隔离属性：`xattr -dr com.apple.quarantine /Applications/AnyRemote.app`。
 
+另外，首次保存带密码的连接时，系统可能弹出钥匙串访问授权（"AnyRemote 想要使用钥匙串"），选择"始终允许"即可，属正常现象。
+
 #### Windows（SmartScreen）
 
-1. 运行 `AnyRemote-<version>-win-x64.exe`。
+1. 运行 `AnyRemote-amd64-installer.exe`。
 2. 出现蓝色「Windows 已保护你的电脑」提示时，点击**更多信息** → **仍要运行**。
 3. 安装为当前用户安装（无需管理员权限），可选择安装目录，默认创建桌面快捷方式。
+4. Windows 端依赖系统 WebView2 Runtime（Windows 10 1803+ / 11 通常已内置；缺失时安装包/系统会引导安装）。
 
 ### 发布流程
 
-本项目目前**不发布 GitHub Release**：electron-builder 的 publish 已关闭（`publish: null` + CLI `--publish never`），CI 只上传 artifacts。若将来接入正式发布，需在 CI 配置 `GH_TOKEN` 并将 publish 改为 `release`，同时建议引入代码签名（`CSC_LINK` / `CSC_KEY_PASSWORD` secrets + 公证）。
+本项目目前**不发布 GitHub Release**：CI 只上传 artifacts。若将来接入正式发布，可基于 tag 触发 workflow 并上传 Release 资产，同时建议引入代码签名与公证（macOS：`CSC_LINK` / 公证 secrets；Windows： Authenticode 证书）。
 
 ---
 
@@ -62,25 +69,29 @@ macOS 本地快速验证单架构包：`npm run build && npx electron-builder --
 
 | Platform | Artifact | Built by |
 |----------|----------|----------|
-| macOS (Apple Silicon) | `AnyRemote-<version>-mac-arm64.dmg` | CI macos runner / local `npm run dist` |
-| macOS (Intel) | `AnyRemote-<version>-mac-x64.dmg` | CI macos runner / local `npm run dist` |
-| Windows (x64) | `AnyRemote-<version>-win-x64.exe` (NSIS installer) | CI windows runner / local cross-build (`npm run dist:win`) |
-| Windows (x64) | `AnyRemote-<version>-win-portable-x64.exe` (no-install portable) | CI windows runner / local cross-build (`npm run dist:win`) |
+| macOS (universal: Apple Silicon + Intel) | `AnyRemote-<version>-mac-universal.dmg` | CI macos runner / local `npm run dist` |
+| Windows (x64) | `AnyRemote-amd64-installer.exe` (NSIS installer) | CI windows runner / local `npm run dist:win` (cross-build also works on macOS) |
 
-Every CI build (push to main or PR) uploads these as Actions artifacts: `anyremote-macos-arm64`, `anyremote-macos-x64`, `anyremote-windows-installer` (NSIS installer) and `anyremote-windows-portable` (portable exe). Download them at the bottom of the workflow run page.
+Every CI build (push to main / feat/wails or PR) uploads these as Actions artifacts: `anyremote-wails-macos` (dmg) and `anyremote-wails-windows` (NSIS exe). Download them at the bottom of the workflow run page.
 
 ### Local packaging
 
+Prerequisites: Go 1.26 + wails CLI v2.13 (`~/go/bin` on PATH) + Node.js.
+
 ```bash
-npm install
-npm run dist       # macOS: arm64 + x64 dmgs → dist/
-npm run dist:win   # Windows installer (must run on Windows; no cross-build from macOS)
-npm run dist:all   # everything buildable on the current platform
+npm install && npm --prefix frontend install
+npm run dist       # macOS: wails build -platform darwin/universal -clean
+                   #   + scripts/build-dmg.sh → dist/AnyRemote-<version>-mac-universal.dmg
+npm run dist:win   # Windows: wails build -platform windows/amd64 -nsis
+                   #   → build/bin/AnyRemote-amd64-installer.exe
 ```
 
-Packaging config lives in `electron-builder.yml` (appId `com.anyremote.app`, asar on, publish off); icons live in `build/` (`icon.png` 1024x1024 source, `icon.icns` generated via iconutil; the Windows .ico is converted from the PNG automatically by electron-builder).
+Packaging notes:
 
-Quick single-arch local check on macOS: `npm run build && npx electron-builder --mac --arm64 --publish never`.
+- The dmg is produced by `scripts/build-dmg.sh` via `hdiutil` (UDZO), containing the `.app` plus an `/Applications` symlink; the version in the filename comes from the root `package.json`.
+- The NSIS installer is generated by wails' bundled makensis (since v2.13 it cross-builds on macOS too — no Windows required); it installs per-user, lets you pick the install directory, and creates a desktop shortcut.
+- The icon source is `build/appicon.png` (1024×1024); `wails build` generates the mac `iconfile.icns` and the embedded Windows icon from it.
+- Note: the bundle's `CFBundleShortVersionString` is currently the wails default `1.0.0` (no `info` section in `wails.json`), which differs from `package.json`'s `0.0.1`; set `info.productVersion` in `wails.json` later to align them.
 
 ### Security warnings for unsigned installers (important)
 
@@ -96,12 +107,15 @@ Current artifacts are **not code-signed or notarized** (no Apple Developer ID / 
 If still blocked: System Settings → Privacy & Security → an "Open Anyway" button for AnyRemote appears — click it.
 Alternatively, remove the quarantine attribute once in Terminal: `xattr -dr com.apple.quarantine /Applications/AnyRemote.app`.
 
+Also, the first time you save a connection with a password, macOS may prompt for keychain access ("AnyRemote wants to use your keychain") — choose **Always Allow**; this is expected.
+
 #### Windows (SmartScreen)
 
-1. Run `AnyRemote-<version>-win-x64.exe`.
+1. Run `AnyRemote-amd64-installer.exe`.
 2. On the blue "Windows protected your PC" prompt, click **More info** → **Run anyway**.
 3. The installer installs per-user (no admin rights), lets you pick the install directory, and creates a desktop shortcut by default.
+4. The app relies on the system WebView2 Runtime (preinstalled on Windows 10 1803+ / 11; if missing, the installer/OS will guide you through installing it).
 
 ### Release process
 
-We currently **do not publish GitHub Releases**: electron-builder publishing is disabled (`publish: null` + CLI `--publish never`); CI only uploads artifacts. To enable real releases later, configure `GH_TOKEN` in CI, switch publish to `release`, and ideally add code signing (`CSC_LINK` / `CSC_KEY_PASSWORD` secrets + notarization).
+We currently **do not publish GitHub Releases**: CI only uploads artifacts. To enable real releases later, trigger the workflow on tags and upload Release assets; ideally add code signing and notarization at the same time (macOS: `CSC_LINK` / notarization secrets; Windows: Authenticode certificate).

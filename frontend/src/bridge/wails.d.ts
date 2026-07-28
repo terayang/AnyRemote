@@ -11,7 +11,12 @@
  * types one-to-one).
  */
 
-import type { VncBridgeHandle } from '../../shared/ipc'
+import type {
+  SavedConnection,
+  SavedConnectionInput,
+  SavedConnectionSummary,
+  VncBridgeHandle
+} from '../../shared/ipc'
 import type { TargetScanReport } from '../../shared/scan'
 import type { FileEntry, SshAuthConfig } from '../../shared/ssh'
 
@@ -41,6 +46,11 @@ export interface WailsApp {
   VncStopBridge(id: string): Promise<void>
   LocalFsHomeDir(): Promise<string>
   LocalFsList(path: string): Promise<FileEntry[]>
+  ConnectionsList(): Promise<SavedConnectionSummary[]>
+  /** Rejects with [NOT_FOUND] for an unknown id (the bridge maps it to null). */
+  ConnectionsGet(id: string): Promise<SavedConnection>
+  ConnectionsSave(input: SavedConnectionInput): Promise<SavedConnectionSummary>
+  ConnectionsDelete(id: string): Promise<void>
   DialogPickFiles(): Promise<string[]>
   /** Resolves with "" when the dialog is canceled. */
   DialogPickSavePath(defaultName: string): Promise<string>
